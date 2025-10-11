@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Secretari</string>
+    <string name="records">기록</string>
+    <string name="no_records">기록 없음</string>
+    <string name="start">시작</string>
+    <string name="stop">중지</string>
+    <string name="settings">설정</string>
+    <string name="account">계정</string>
+    <string name="login">로그인</string>
+    <string name="register">등록</string>
+    <string name="purchase">구매</string>
+    <string name="help">도움말</string>
+    <string name="summary">요약</string>
+    <string name="transcript">전사</string>
+    <string name="translation">번역</string>
+    <string name="share">공유</string>
+    <string name="regenerate">재생성</string>
+    <string name="recognizing">인식 중</string>
+    <string name="streaming_from_ai">AI에서 스트리밍 중</string>
+    <string name="language">언어</string>
+    <string name="username">사용자 이름</string>
+    <string name="password">비밀번호</string>
+    <string name="email">이메일</string>
+    <string name="first_name">이름</string>
+    <string name="last_name">성</string>
+</resources>
+

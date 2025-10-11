@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Secretari</string>
+    <string name="records">记录</string>
+    <string name="no_records">无记录</string>
+    <string name="start">开始</string>
+    <string name="stop">停止</string>
+    <string name="settings">设置</string>
+    <string name="account">账户</string>
+    <string name="login">登录</string>
+    <string name="register">注册</string>
+    <string name="purchase">购买</string>
+    <string name="help">帮助</string>
+    <string name="summary">摘要</string>
+    <string name="transcript">转录</string>
+    <string name="translation">翻译</string>
+    <string name="share">分享</string>
+    <string name="regenerate">重新生成</string>
+    <string name="recognizing">识别中</string>
+    <string name="streaming_from_ai">从AI流式传输</string>
+    <string name="language">语言</string>
+    <string name="username">用户名</string>
+    <string name="password">密码</string>
+    <string name="email">电子邮件</string>
+    <string name="first_name">名字</string>
+    <string name="last_name">姓氏</string>
+</resources>
+

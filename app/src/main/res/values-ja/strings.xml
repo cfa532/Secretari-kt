@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Secretari</string>
+    <string name="records">記録</string>
+    <string name="no_records">記録なし</string>
+    <string name="start">開始</string>
+    <string name="stop">停止</string>
+    <string name="settings">設定</string>
+    <string name="account">アカウント</string>
+    <string name="login">ログイン</string>
+    <string name="register">登録</string>
+    <string name="purchase">購入</string>
+    <string name="help">ヘルプ</string>
+    <string name="summary">要約</string>
+    <string name="transcript">転記</string>
+    <string name="translation">翻訳</string>
+    <string name="share">共有</string>
+    <string name="regenerate">再生成</string>
+    <string name="recognizing">認識中</string>
+    <string name="streaming_from_ai">AIからストリーミング中</string>
+    <string name="language">言語</string>
+    <string name="username">ユーザー名</string>
+    <string name="password">パスワード</string>
+    <string name="email">メール</string>
+    <string name="first_name">名</string>
+    <string name="last_name">姓</string>
+</resources>
+
