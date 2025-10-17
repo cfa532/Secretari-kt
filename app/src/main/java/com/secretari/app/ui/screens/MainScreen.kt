@@ -173,8 +173,9 @@ fun MainScreen(
                         modifier = Modifier
                             .size(80.dp)
                             .shadow(
-                                elevation = 8.dp,
-                                shape = CircleShape
+                                elevation = 6.dp,
+                                shape = CircleShape,
+                                clip = false
                             ),
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
@@ -230,8 +231,9 @@ fun MainScreen(
                         modifier = Modifier
                             .size(80.dp)
                             .shadow(
-                                elevation = 8.dp,
-                                shape = CircleShape
+                                elevation = 6.dp,
+                                shape = CircleShape,
+                                clip = false
                             ),
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
