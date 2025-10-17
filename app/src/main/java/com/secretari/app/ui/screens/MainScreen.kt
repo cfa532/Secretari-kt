@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -170,16 +171,22 @@ fun MainScreen(
                     Button(
                         onClick = onStartRecording,
                         modifier = Modifier
-                            .size(80.dp),
+                            .size(80.dp)
+                            .shadow(
+                                elevation = 8.dp,
+                                shape = CircleShape
+                            ),
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             contentColor = MaterialTheme.colorScheme.error
                         ),
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 2.dp
+                            defaultElevation = 0.dp,
+                            pressedElevation = 4.dp,
+                            hoveredElevation = 6.dp,
+                            focusedElevation = 6.dp
                         ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
@@ -221,16 +228,22 @@ fun MainScreen(
                     Button(
                         onClick = onStartRecording,
                         modifier = Modifier
-                            .size(80.dp),
+                            .size(80.dp)
+                            .shadow(
+                                elevation = 8.dp,
+                                shape = CircleShape
+                            ),
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             contentColor = MaterialTheme.colorScheme.error
                         ),
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 2.dp
+                            defaultElevation = 0.dp,
+                            pressedElevation = 4.dp,
+                            hoveredElevation = 6.dp,
+                            focusedElevation = 6.dp
                         ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
