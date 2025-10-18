@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.RecognizerLocale
@@ -22,6 +23,7 @@ fun SettingsScreen(
     var currentSettings by remember { mutableStateOf(settings) }
     var showLocaleDialog by remember { mutableStateOf(false) }
     var showPromptTypeDialog by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
@@ -31,15 +33,23 @@ fun SettingsScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, "Back")
                     }
+                },
+                actions = {
+                    TextButton(onClick = { showResetDialog = true }) {
+                        Text("Reset")
+                    }
                 }
             )
         }
     ) { padding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            LazyColumn(
+                modifier = Modifier.weight(1f)
+            ) {
             item {
                 SettingsSection(title = "Recognition") {
                     SettingsItem(
@@ -78,14 +88,43 @@ fun SettingsScreen(
             }
             
             item {
-                SettingsSection(title = "About") {
+                SettingsSection(title = "Advanced") {
                     SettingsItem(
-                        title = "Version",
-                        value = "1.0.0",
+                        title = "Silent timer",
+                        value = "30 min",
                         onClick = { }
                     )
+                    SettingsItem(
+                        title = "Max work time",
+                        value = "8 hr",
+                        onClick = { }
+                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
             }
+            }
+            
+            // Version footnote at the bottom
+            Text(
+                text = "Version 1.0.0",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                textAlign = TextAlign.Center
+            )
         }
     }
     
@@ -139,6 +178,30 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showPromptTypeDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Reset Settings") },
+            text = { Text("Are you sure you want to reset all settings to default values?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        currentSettings = com.secretari.app.data.model.AppConstants.DEFAULT_SETTINGS
+                        onSettingsChange(currentSettings)
+                        showResetDialog = false
+                    }
+                ) {
+                    Text("Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
                     Text("Cancel")
                 }
             }

@@ -1,10 +1,12 @@
 package com.secretari.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.secretari.app.data.model.AudioRecord
@@ -125,10 +128,17 @@ fun MainScreen(
                         Icon(
                             Icons.Default.List,
                             contentDescription = null,
-                            modifier = Modifier.size(80.dp),
+                            modifier = Modifier
+                                .size(80.dp)
+                                .alpha(0.5f)
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    shape = RoundedCornerShape(8.dp)
+                                ),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
                         
                         // "No records" title
                         Text(
