@@ -168,18 +168,18 @@ class RealtimeSpeechRecognition(private val context: Context) {
                     val errorMessage = getErrorText(error)
                     Log.e("RealtimeSpeech", "Error: $errorMessage (code: $error)")
                     when (error) {
-                        SpeechRecognizer.ERROR_NO_MATCH -> {
-                            Log.d("RealtimeSpeech", "No speech detected - user may need to speak louder or closer to mic")
-                            // Restart listening for continuous recognition on non-fatal errors
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                if (isRecording) {
-                                    Log.d("RealtimeSpeech", "Restarting speech recognition after no match")
-                                    startListening(locale)
-                                } else {
-                                    Log.d("RealtimeSpeech", "Not restarting after no match - recording stopped")
-                                }
-                            }, 800) // Increased delay for better emulator compatibility
+                SpeechRecognizer.ERROR_NO_MATCH -> {
+                    Log.d("RealtimeSpeech", "No speech detected - user may need to speak louder or closer to mic")
+                    // Restart listening for continuous recognition on non-fatal errors
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        if (isRecording) {
+                            Log.d("RealtimeSpeech", "Restarting speech recognition after no match")
+                            startListening(locale)
+                        } else {
+                            Log.d("RealtimeSpeech", "Not restarting after no match - recording stopped")
                         }
+                    }, 800) // Increased delay for better emulator compatibility
+                }
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
                             Log.d("RealtimeSpeech", "Speech timeout - no speech detected within timeout period")
                             // Restart listening for continuous recognition
@@ -201,10 +201,31 @@ class RealtimeSpeechRecognition(private val context: Context) {
                         SpeechRecognizer.ERROR_SERVER -> Log.d("RealtimeSpeech", "Server error - speech recognition service error")
                         else -> Log.d("RealtimeSpeech", "Unknown error: $error")
                     }
-                    // Only send error and stop recording for serious errors (not ERROR_NO_MATCH or ERROR_SPEECH_TIMEOUT)
-                    if (error != SpeechRecognizer.ERROR_NO_MATCH && error != SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                        channel.trySend(RecognitionResult.Error(errorMessage))
-                        isRecording = false
+                    // Only send error and stop recording for serious errors
+                    when (error) {
+                        SpeechRecognizer.ERROR_NO_MATCH, 
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                            // These are recoverable - don't stop recording, restart logic already handled above
+                        }
+                        SpeechRecognizer.ERROR_AUDIO,
+                        SpeechRecognizer.ERROR_CLIENT,
+                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS,
+                        SpeechRecognizer.ERROR_NETWORK,
+                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
+                        SpeechRecognizer.ERROR_SERVER -> {
+                            // These are serious errors - stop recording
+                            channel.trySend(RecognitionResult.Error(errorMessage))
+                            isRecording = false
+                        }
+                        else -> {
+                            // Unknown errors - try to restart
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                if (isRecording) {
+                                    Log.d("RealtimeSpeech", "Restarting after unknown error: $error")
+                                    startListening(locale)
+                                }
+                            }, 1000)
+                        }
                     }
                 }
             
@@ -215,17 +236,19 @@ class RealtimeSpeechRecognition(private val context: Context) {
                     currentTranscript = text
                     Log.d("RealtimeSpeech", "Final result: $text")
                     channel.trySend(RecognitionResult.FinalText(text))
-                    
-                    // Restart listening for continuous speech recognition
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        if (isRecording) {
-                            Log.d("RealtimeSpeech", "Restarting speech recognition after successful result: '$text'")
-                            startListening(locale)
-                        } else {
-                            Log.d("RealtimeSpeech", "Not restarting - recording stopped")
-                        }
-                    }, 500) // Increased delay for better emulator compatibility
+                } else {
+                    Log.d("RealtimeSpeech", "No final results received")
                 }
+                
+                // Always restart listening for continuous speech recognition
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (isRecording) {
+                        Log.d("RealtimeSpeech", "Restarting speech recognition after onResults")
+                        startListening(locale)
+                    } else {
+                        Log.d("RealtimeSpeech", "Not restarting - recording stopped")
+                    }
+                }, 500) // Increased delay for better emulator compatibility
             }
             
             override fun onPartialResults(partialResults: Bundle?) {
