@@ -1,5 +1,6 @@
 package com.secretari.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -27,6 +28,7 @@ fun SettingsScreen(
     var showResetDialog by remember { mutableStateOf(false) }
     var isEditingPrompt by remember { mutableStateOf(false) }
     var editedPromptText by remember { mutableStateOf("") }
+    var showEditButton by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
@@ -148,17 +150,21 @@ fun SettingsScreen(
                                 Text(
                                     text = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text.",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.clickable { showEditButton = !showEditButton }
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                TextButton(
-                                    onClick = {
-                                        editedPromptText = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text."
-                                        isEditingPrompt = true
-                                    },
-                                    modifier = Modifier.align(Alignment.End)
-                                ) {
-                                    Text("Edit")
+                                if (showEditButton) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    TextButton(
+                                        onClick = {
+                                            editedPromptText = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text."
+                                            isEditingPrompt = true
+                                            showEditButton = false
+                                        },
+                                        modifier = Modifier.align(Alignment.End)
+                                    ) {
+                                        Text("Edit")
+                                    }
                                 }
                             }
                         }
@@ -192,6 +198,7 @@ fun SettingsScreen(
                                 currentSettings = currentSettings.copy(selectedLocale = locale)
                                 onSettingsChange(currentSettings)
                                 showLocaleDialog = false
+                                showEditButton = false
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -220,6 +227,7 @@ fun SettingsScreen(
                                 currentSettings = currentSettings.copy(promptType = type)
                                 onSettingsChange(currentSettings)
                                 showPromptTypeDialog = false
+                                showEditButton = false
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
