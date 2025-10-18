@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,6 +25,8 @@ fun SettingsScreen(
     var showLocaleDialog by remember { mutableStateOf(false) }
     var showPromptTypeDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
+    var isEditingPrompt by remember { mutableStateOf(false) }
+    var editedPromptText by remember { mutableStateOf("") }
     
     Scaffold(
         topBar = {
@@ -100,12 +103,65 @@ fun SettingsScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp)
                     ) {
-                        Text(
-                            text = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            if (isEditingPrompt) {
+                                OutlinedTextField(
+                                    value = editedPromptText,
+                                    onValueChange = { editedPromptText = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 3,
+                                    maxLines = 6,
+                                    label = { Text("Instruction Text") }
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    TextButton(
+                                        onClick = {
+                                            isEditingPrompt = false
+                                            editedPromptText = ""
+                                        }
+                                    ) {
+                                        Text("Cancel")
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    TextButton(
+                                        onClick = {
+                                            // Save the custom prompt
+                                            val updatedPrompts = currentSettings.prompt.toMutableMap()
+                                            val localePrompts = updatedPrompts[currentSettings.promptType]?.toMutableMap() ?: mutableMapOf()
+                                            localePrompts[currentSettings.selectedLocale] = editedPromptText
+                                            updatedPrompts[currentSettings.promptType] = localePrompts
+                                            
+                                            currentSettings = currentSettings.copy(prompt = updatedPrompts)
+                                            onSettingsChange(currentSettings)
+                                            isEditingPrompt = false
+                                            editedPromptText = ""
+                                        }
+                                    ) {
+                                        Text("Save")
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    text = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextButton(
+                                    onClick = {
+                                        editedPromptText = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text."
+                                        isEditingPrompt = true
+                                    },
+                                    modifier = Modifier.align(Alignment.End)
+                                ) {
+                                    Text("Edit")
+                                }
+                            }
+                        }
                     }
                 }
             }
