@@ -85,10 +85,7 @@ class RealtimeSpeechRecognition(private val context: Context) {
         
         // List of well-known speech recognition services to try
         val speechServices = listOf(
-            // Try Google Assistant's service first since it works
-            ComponentName("com.google.android.googlequicksearchbox", "com.google.android.voicesearch.serviceapi.GoogleRecognitionService"),
-            
-            // Try default system service second
+            // Try default system service first (most compatible)
             null, // This will use the default SpeechRecognizer
             
             // Other Google Speech Services
@@ -178,8 +175,10 @@ class RealtimeSpeechRecognition(private val context: Context) {
                                 if (isRecording) {
                                     Log.d("RealtimeSpeech", "Restarting speech recognition after no match")
                                     startListening(locale)
+                                } else {
+                                    Log.d("RealtimeSpeech", "Not restarting after no match - recording stopped")
                                 }
-                            }, 100)
+                            }, 800) // Increased delay for better emulator compatibility
                         }
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
                             Log.d("RealtimeSpeech", "Speech timeout - no speech detected within timeout period")
@@ -188,8 +187,10 @@ class RealtimeSpeechRecognition(private val context: Context) {
                                 if (isRecording) {
                                     Log.d("RealtimeSpeech", "Restarting speech recognition after timeout")
                                     startListening(locale)
+                                } else {
+                                    Log.d("RealtimeSpeech", "Not restarting after timeout - recording stopped")
                                 }
-                            }, 100)
+                            }, 800) // Increased delay for better emulator compatibility
                         }
                         SpeechRecognizer.ERROR_AUDIO -> Log.d("RealtimeSpeech", "Audio error - microphone may not be working")
                         SpeechRecognizer.ERROR_CLIENT -> Log.d("RealtimeSpeech", "Client error - speech recognition service issue")
@@ -218,10 +219,12 @@ class RealtimeSpeechRecognition(private val context: Context) {
                     // Restart listening for continuous speech recognition
                     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                         if (isRecording) {
-                            Log.d("RealtimeSpeech", "Restarting speech recognition after result")
+                            Log.d("RealtimeSpeech", "Restarting speech recognition after successful result: '$text'")
                             startListening(locale)
+                        } else {
+                            Log.d("RealtimeSpeech", "Not restarting - recording stopped")
                         }
-                    }, 100) // Small delay to ensure proper restart
+                    }, 500) // Increased delay for better emulator compatibility
                 }
             }
             
@@ -269,7 +272,7 @@ class RealtimeSpeechRecognition(private val context: Context) {
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5) // Allow more results for continuous speech
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-            // Configure for better speech detection
+            // Configure for better speech detection - back to working configuration
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 500) // 0.5 second minimum
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 8000) // 8 seconds silence timeout
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000) // 5 seconds partial silence
