@@ -33,6 +33,77 @@ This guide explains how to set up Android emulator in debug mode and monitor you
 2. **Physical Device Testing**: Required for speech recognition validation
 3. **Production Ready**: App works perfectly on real devices despite emulator limitations
 
+## ✅ SUCCESS: Speech Recognition Working on Emulator
+
+**UPDATE**: We have successfully achieved speech recognition on the Android emulator! Here's what works:
+
+### Working Configuration:
+- ✅ **Service Binding**: Using default system SpeechRecognizer (not Google Assistant's restricted service)
+- ✅ **Manifest Configuration**: Added `<queries>` element with Google Quick Search Box package
+- ✅ **Speech Detection**: Successfully recognizing speech input (few words at a time)
+- ✅ **Continuous Restart Logic**: Implemented for sustained recognition sessions
+
+## 🚨 CRITICAL: Google's Known Short Word Recognition Bug
+
+**Google Issue Tracker #448768895**: [Android Speech Recognizer doesn't recognize short words like "one", "two", "three"](https://issuetracker.google.com/issues/448768895)
+
+### The Problem:
+- **Short words fail**: Single-syllable words like "one", "two", "three", "he", "she", "we" return Error 7 (NO_MATCH)
+- **Numbers especially affected**: Numbers 1-10 are consistently not recognized
+- **Location-dependent**: Performance varies by geographic location (Melbourne works, Milan doesn't)
+- **Duration**: This has been a production bug since September 2022
+
+### Google's Official Solution (June 2024):
+Use `EXTRA_LANGUAGE_MODEL` with `LANGUAGE_MODEL_WEB_SEARCH`:
+
+```kotlin
+intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
+```
+
+### Impact on Our App:
+- ✅ **We're experiencing this exact issue** - short words not recognized
+- ✅ **Error 7 (NO_MATCH)** - matches the reported symptoms
+- ✅ **Solution available** - Google has provided the fix
+- ⚠️ **Need to implement** - Update our recognition intent with the language model
+
+### Key Settings That Work:
+```kotlin
+// Speech Recognition Intent Configuration - Updated with Google's Fix
+putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH) // Google's fix for short words
+putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 500) // 0.5 second minimum
+putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 8000) // 8 seconds
+putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000) // 5 seconds
+putExtra(RecognizerIntent.EXTRA_CONFIDENCE_SCORES, true)
+putExtra("android.speech.extra.DICTATION_MODE", true)
+putExtra("android.speech.extra.CONTINUOUS_SPEECH", true)
+```
+
+### Required Manifest Configuration:
+```xml
+<queries>
+    <package android:name="com.google.android.googlequicksearchbox"/>
+</queries>
+```
+
+### Current Status:
+- ✅ **Speech Recognition**: Working on emulator (recognizing speech input)
+- ✅ **Google's Fix Applied**: `LANGUAGE_MODEL_WEB_SEARCH` successfully implemented
+- ✅ **Short Words Working**: "one", "two", "three" now recognized (previously failed)
+- ✅ **Audio Recording**: Working perfectly as fallback
+- ✅ **Continuous Recognition**: Implemented with restart logic
+- ✅ **Error Handling**: Robust fallback system
+
+### ✅ VERIFIED SUCCESS (October 18, 2025):
+**Test Results**: "that is great one two three" - **All words including numbers 1-3 recognized!**
+- ✅ **Short words fixed**: Numbers "one", "two", "three" now work (Google's fix successful)
+- ✅ **Real-time transcription**: Partial results showing progressive recognition
+- ✅ **Continuous recognition**: Multiple recognition sessions working properly
+
+### Next Steps:
+- **Build upon current success** - optimize recognition accuracy
+- **Test continuous recognition** - ensure sustained speech-to-text
+- **Physical device validation** - confirm full functionality on real devices
+
 ## 1. Setting Up Environment Variables
 
 First, set up your Android SDK environment:
