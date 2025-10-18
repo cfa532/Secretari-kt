@@ -1,6 +1,7 @@
 package com.secretari.app.service
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -31,6 +32,7 @@ class RealtimeSpeechRecognition(private val context: Context) {
     }
     
     fun startRealtimeRecognition(locale: String): Flow<RecognitionResult> = callbackFlow {
+        Log.d("RealtimeSpeech", "=== CALLBACK FLOW STARTED ===")
         Log.d("RealtimeSpeech", "startRealtimeRecognition called with locale: $locale")
 
         if (isRecording) {
@@ -80,17 +82,63 @@ class RealtimeSpeechRecognition(private val context: Context) {
     
     private suspend fun startSystemSpeechRecognition(locale: String, channel: kotlinx.coroutines.channels.SendChannel<RecognitionResult>) {
         Log.d("RealtimeSpeech", "Creating SpeechRecognizer")
-        try {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
-            if (speechRecognizer == null) {
-                Log.e("RealtimeSpeech", "SpeechRecognizer creation failed!")
-                channel.trySend(RecognitionResult.Error("Failed to create SpeechRecognizer"))
-                return
+        
+        // List of well-known speech recognition services to try
+        val speechServices = listOf(
+            // Google Speech Services
+            ComponentName("com.google.android.googlequicksearchbox", "com.google.android.voicesearch.serviceapi.GoogleRecognitionService"),
+            ComponentName("com.google.android.gms", "com.google.android.gms.speech.serviceapi.GoogleRecognitionService"),
+            
+            // iFlytek (Chinese speech recognition)
+            ComponentName("com.iflytek.speechsuite", "com.iflytek.speechsuite.SpeechService"),
+            ComponentName("com.iflytek.speechsuite", "com.iflytek.speechsuite.RecognitionService"),
+            
+            // Samsung (Samsung devices)
+            ComponentName("com.samsung.android.bixby.agent", "com.samsung.android.bixby.agent.speech.SpeechService"),
+            ComponentName("com.samsung.android.svoice", "com.samsung.android.svoice.service.SpeechService"),
+            
+            // Microsoft (if available)
+            ComponentName("com.microsoft.cortana", "com.microsoft.cortana.speech.SpeechService"),
+            
+            // Baidu (Chinese alternative)
+            ComponentName("com.baidu.speech", "com.baidu.speech.service.SpeechService"),
+            
+            // Default system service
+            null // This will use the default SpeechRecognizer
+        )
+        
+        var lastError: Exception? = null
+        var serviceName = "unknown"
+        
+        for (service in speechServices) {
+            try {
+                if (service != null) {
+                    Log.d("RealtimeSpeech", "Trying speech service: ${service.packageName}/${service.className}")
+                    speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context, service)
+                    serviceName = "${service.packageName}/${service.className}"
+                } else {
+                    Log.d("RealtimeSpeech", "Trying default SpeechRecognizer")
+                    speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+                    serviceName = "default"
+                }
+                
+                if (speechRecognizer != null) {
+                    Log.d("RealtimeSpeech", "SpeechRecognizer created successfully with service: $serviceName")
+                    break
+                } else {
+                    Log.w("RealtimeSpeech", "SpeechRecognizer creation returned null for service: $serviceName")
+                }
+            } catch (e: Exception) {
+                Log.w("RealtimeSpeech", "Failed to create SpeechRecognizer with service: $serviceName", e)
+                lastError = e
+                speechRecognizer = null
             }
-            Log.d("RealtimeSpeech", "SpeechRecognizer created successfully")
-        } catch (e: Exception) {
-            Log.e("RealtimeSpeech", "Exception creating SpeechRecognizer", e)
-            channel.trySend(RecognitionResult.Error("Exception creating SpeechRecognizer: ${e.message}"))
+        }
+        
+        if (speechRecognizer == null) {
+            val errorMessage = "No speech recognition service available. Last error: ${lastError?.message ?: "Unknown error"}"
+            Log.e("RealtimeSpeech", errorMessage)
+            channel.trySend(RecognitionResult.Error(errorMessage))
             return
         }
         

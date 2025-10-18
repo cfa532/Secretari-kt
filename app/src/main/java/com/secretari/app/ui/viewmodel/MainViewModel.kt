@@ -2,6 +2,7 @@ package com.secretari.app.ui.viewmodel
 
 import android.app.Application
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.secretari.app.data.database.AppDatabase
@@ -110,7 +111,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 
                 // Use withTimeout to ensure fallback if speech recognition hangs
                 try {
-                    kotlinx.coroutines.withTimeout(1000) { // 1 second timeout
+                    kotlinx.coroutines.withTimeout(5000) { // 5 second timeout
                         Log.d("MainViewModel", "Starting flow collection with timeout...")
                         recognitionFlow.collect { result ->
                             Log.d("MainViewModel", "Received result: $result")
@@ -132,19 +133,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                     _transcript.value = result.text
                                     _isListening.value = false
                                 }
-                                is RealtimeSpeechRecognition.RecognitionResult.Error -> {
-                                    Log.e("MainViewModel", "Speech recognition error: ${result.message}")
-                                    _errorMessage.value = result.message
-                                    _isListening.value = false
-                                    Log.d("MainViewModel", "State after error: isListening=${_isListening.value}, errorMessage=${_errorMessage.value}")
-                                    // Always fall back to audio recording when speech recognition fails
-                                    startAudioRecordingFallback()
-                                }
+                                        is RealtimeSpeechRecognition.RecognitionResult.Error -> {
+                                            Log.e("MainViewModel", "Speech recognition error: ${result.message}")
+                                            _errorMessage.value = result.message
+                                            _isListening.value = false
+                                            Log.d("MainViewModel", "State after error: isListening=${_isListening.value}, errorMessage=${_errorMessage.value}")
+                                            
+                                            // Show toast message to user
+                                            Toast.makeText(getApplication<Application>(), "Speech recognition failed: ${result.message}", Toast.LENGTH_LONG).show()
+                                            
+                                            // Always fall back to audio recording when speech recognition fails
+                                            startAudioRecordingFallback()
+                                        }
                             }
                         }
                     }
                 } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
                     Log.w("MainViewModel", "Speech recognition timed out, starting fallback")
+                    Toast.makeText(getApplication<Application>(), "Speech recognition timed out, falling back to audio recording", Toast.LENGTH_LONG).show()
                     startAudioRecordingFallback()
                 } catch (e: Exception) {
                     Log.e("MainViewModel", "Error collecting speech recognition flow: ${e.message}")

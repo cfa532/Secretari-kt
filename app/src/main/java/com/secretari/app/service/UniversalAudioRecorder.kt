@@ -55,9 +55,21 @@ class UniversalAudioRecorder(private val context: Context) {
             Log.d("UniversalRecorder", "Recording started: ${audioFile?.absolutePath}")
             trySend(RecordingResult.Started)
             
-            // Keep recording until stopped
+            // Monitor audio levels
             while (isRecording && mediaRecorder != null) {
-                kotlinx.coroutines.delay(1000) // Check every second
+                try {
+                    val maxAmplitude = mediaRecorder?.maxAmplitude ?: 0
+                    val level = if (maxAmplitude > 0) {
+                        (20 * Math.log10(maxAmplitude.toDouble() / 32767.0)).toFloat()
+                    } else {
+                        -60f
+                    }
+                    trySend(RecordingResult.AudioLevel(level))
+                } catch (e: Exception) {
+                    // Ignore amplitude errors
+                }
+                
+                kotlinx.coroutines.delay(100) // Check every 100ms
             }
             
         } catch (e: IOException) {
