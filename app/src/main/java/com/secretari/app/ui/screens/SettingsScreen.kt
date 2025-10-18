@@ -50,18 +50,14 @@ fun SettingsScreen(
             LazyColumn(
                 modifier = Modifier.weight(1f)
             ) {
+
             item {
-                SettingsSection(title = "Recognition") {
+                SettingsSection(title = "AI Settings") {
                     SettingsItem(
                         title = "Language",
                         value = currentSettings.selectedLocale.displayName,
                         onClick = { showLocaleDialog = true }
                     )
-                }
-            }
-            
-            item {
-                SettingsSection(title = "AI Settings") {
                     SettingsItem(
                         title = "Prompt Type",
                         value = currentSettings.promptType.name,
