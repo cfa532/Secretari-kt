@@ -35,7 +35,11 @@ fun DetailScreen(
     onShare: () -> Unit,
     onTranslate: () -> Unit,
     onRegenerate: () -> Unit,
-    onLocaleChange: (RecognizerLocale) -> Unit
+    onLocaleChange: (RecognizerLocale) -> Unit,
+    isListening: Boolean = false,
+    audioLevel: Float = -60f,
+    audioFilePath: String? = null,
+    errorMessage: String? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showRegenerateDialog by remember { mutableStateOf(false) }
@@ -122,7 +126,15 @@ fun DetailScreen(
         ) {
             when {
                 isRecording -> {
-                    RecordingView(transcript = transcript, settings = settings, onLocaleChange = onLocaleChange)
+                    RecordingView(
+                        transcript = transcript, 
+                        settings = settings, 
+                        onLocaleChange = onLocaleChange,
+                        isListening = isListening,
+                        audioLevel = audioLevel,
+                        audioFilePath = audioFilePath,
+                        errorMessage = errorMessage
+                    )
                 }
                 isStreaming -> {
                     StreamingView(streamedText = streamedText)
@@ -162,7 +174,11 @@ fun DetailScreen(
 fun RecordingView(
     transcript: String,
     settings: Settings,
-    onLocaleChange: (RecognizerLocale) -> Unit
+    onLocaleChange: (RecognizerLocale) -> Unit,
+    isListening: Boolean = false,
+    audioLevel: Float = -60f,
+    audioFilePath: String? = null,
+    errorMessage: String? = null
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
@@ -173,7 +189,15 @@ fun RecordingView(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PulsingDot()
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Recognizing", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    when {
+                        errorMessage != null -> "Error: $errorMessage"
+                        isListening -> "Listening..."
+                        audioFilePath != null -> "Recording audio..."
+                        else -> "Starting..."
+                    }, 
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
             
             var expanded by remember { mutableStateOf(false) }
@@ -200,6 +224,14 @@ fun RecordingView(
         
         Spacer(modifier = Modifier.height(16.dp))
         
+        // Debug information
+        Text(
+            text = "Debug: Listening=$isListening, AudioLevel=${audioLevel.toInt()}dB, FilePath=${audioFilePath?.takeLast(20) ?: "null"}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
         LazyColumn {
             items(transcript.split("\n")) { line ->
                 if (line.isNotEmpty()) {
@@ -210,6 +242,12 @@ fun RecordingView(
                     )
                 }
             }
+        }
+        
+        // Show audio level indicator
+        if (audioLevel > -60f) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Audio Level: ${audioLevel.toInt()}dB", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

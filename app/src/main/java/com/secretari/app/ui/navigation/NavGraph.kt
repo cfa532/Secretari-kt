@@ -46,6 +46,10 @@ fun NavGraph(
     val isStreaming by viewModel.isStreaming.collectAsState()
     val streamedText by viewModel.streamedText.collectAsState()
     val loginStatus by viewModel.loginStatus.collectAsState()
+    val isListening by viewModel.isListening.collectAsState()
+    val audioLevel by viewModel.audioLevel.collectAsState()
+    val audioFilePath by viewModel.audioFilePath.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
@@ -110,7 +114,11 @@ fun NavGraph(
                     viewModel.updateSettings(settings.copy(selectedLocale = locale))
                     viewModel.stopRecording()
                     viewModel.startRecording(locale.code)
-                }
+                },
+                isListening = isListening,
+                audioLevel = audioLevel,
+                audioFilePath = audioFilePath,
+                errorMessage = errorMessage
             )
         }
         

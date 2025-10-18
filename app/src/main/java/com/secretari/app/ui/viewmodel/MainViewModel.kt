@@ -1,6 +1,7 @@
 package com.secretari.app.ui.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.secretari.app.data.database.AppDatabase
@@ -10,6 +11,8 @@ import com.secretari.app.data.model.User
 import com.secretari.app.data.network.WebSocketClient
 import com.secretari.app.data.repository.AudioRecordRepository
 import com.secretari.app.service.SpeechRecognitionService
+import com.secretari.app.service.UniversalAudioRecorder
+import com.secretari.app.service.RealtimeSpeechRecognition
 import com.secretari.app.util.SettingsManager
 import com.secretari.app.util.UserManager
 import kotlinx.coroutines.flow.*
@@ -22,6 +25,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsManager = SettingsManager.getInstance(application)
     private val userManager = UserManager.getInstance(application)
     private val speechRecognitionService = SpeechRecognitionService(application)
+    private val universalAudioRecorder = UniversalAudioRecorder(application)
+    private val realtimeSpeechRecognition = RealtimeSpeechRecognition(application)
     private val webSocketClient = WebSocketClient()
     
     val allRecords: Flow<List<AudioRecord>> = repository.allRecords
@@ -45,6 +50,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     private val _loginStatus = MutableStateFlow(UserManager.LoginStatus.SIGNED_OUT)
     val loginStatus: StateFlow<UserManager.LoginStatus> = _loginStatus.asStateFlow()
+    
+    private val _audioFilePath = MutableStateFlow<String?>(null)
+    val audioFilePath: StateFlow<String?> = _audioFilePath.asStateFlow()
+    
+    private val _audioLevel = MutableStateFlow(-60f)
+    val audioLevel: StateFlow<Float> = _audioLevel.asStateFlow()
+    
+    private val _isListening = MutableStateFlow(false)
+    val isListening: StateFlow<Boolean> = _isListening.asStateFlow()
     
     init {
         checkLoginStatus()
@@ -71,23 +85,106 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (_isRecording.value) return
         
         viewModelScope.launch {
-            _isRecording.value = true
-            _transcript.value = ""
-            
-            speechRecognitionService.startRecognition(locale).collect { result ->
-                when (result) {
-                    is SpeechRecognitionService.RecognitionResult.Success -> {
-                        if (_transcript.value.isEmpty()) {
-                            _transcript.value = result.text
-                        } else {
-                            _transcript.value += " ${result.text}"
+            try {
+                _isRecording.value = true
+                _transcript.value = ""
+                _isListening.value = false
+                _audioFilePath.value = null
+                _audioLevel.value = -60f
+                _errorMessage.value = null
+                
+                Log.d("MainViewModel", "Starting recording with locale: $locale")
+                Log.d("MainViewModel", "State: isRecording=${_isRecording.value}, isListening=${_isListening.value}, audioFilePath=${_audioFilePath.value}")
+                
+                         Log.d("MainViewModel", "About to call startRealtimeRecognition")
+                         val recognitionFlow = try {
+                             realtimeSpeechRecognition.startRealtimeRecognition(locale)
+                         } catch (e: Exception) {
+                             Log.e("MainViewModel", "Exception creating recognition flow: ${e.message}", e)
+                             _errorMessage.value = "Failed to create recognition flow: ${e.message}"
+                             startAudioRecordingFallback()
+                             return@launch
+                         }
+                         Log.d("MainViewModel", "Got recognition flow, starting collection")
+                         Log.d("MainViewModel", "Flow created successfully, about to collect")
+                
+                // Use withTimeout to ensure fallback if speech recognition hangs
+                try {
+                    kotlinx.coroutines.withTimeout(1000) { // 1 second timeout
+                        Log.d("MainViewModel", "Starting flow collection with timeout...")
+                        recognitionFlow.collect { result ->
+                            Log.d("MainViewModel", "Received result: $result")
+                            when (result) {
+                                is RealtimeSpeechRecognition.RecognitionResult.Ready -> {
+                                    Log.d("MainViewModel", "Speech recognition ready")
+                                }
+                                is RealtimeSpeechRecognition.RecognitionResult.Listening -> {
+                                    Log.d("MainViewModel", "Speech recognition listening")
+                                    _isListening.value = true
+                                    Log.d("MainViewModel", "State after listening: isListening=${_isListening.value}")
+                                }
+                                is RealtimeSpeechRecognition.RecognitionResult.PartialText -> {
+                                    Log.d("MainViewModel", "Partial text: ${result.text}")
+                                    _transcript.value = result.text
+                                }
+                                is RealtimeSpeechRecognition.RecognitionResult.FinalText -> {
+                                    Log.d("MainViewModel", "Final text: ${result.text}")
+                                    _transcript.value = result.text
+                                    _isListening.value = false
+                                }
+                                is RealtimeSpeechRecognition.RecognitionResult.Error -> {
+                                    Log.e("MainViewModel", "Speech recognition error: ${result.message}")
+                                    _errorMessage.value = result.message
+                                    _isListening.value = false
+                                    Log.d("MainViewModel", "State after error: isListening=${_isListening.value}, errorMessage=${_errorMessage.value}")
+                                    // Always fall back to audio recording when speech recognition fails
+                                    startAudioRecordingFallback()
+                                }
+                            }
                         }
                     }
-                    is SpeechRecognitionService.RecognitionResult.Error -> {
-                        _errorMessage.value = result.message
+                } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                    Log.w("MainViewModel", "Speech recognition timed out, starting fallback")
+                    startAudioRecordingFallback()
+                } catch (e: Exception) {
+                    Log.e("MainViewModel", "Error collecting speech recognition flow: ${e.message}")
+                    _errorMessage.value = "Flow collection error: ${e.message}"
+                    startAudioRecordingFallback()
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error in startRecording: ${e.message}")
+                _errorMessage.value = "Failed to start recording: ${e.message}"
+                _isRecording.value = false
+            }
+        }
+    }
+    
+    private fun startAudioRecordingFallback() {
+        viewModelScope.launch {
+            Log.d("MainViewModel", "Starting audio recording fallback")
+            _audioFilePath.value = null
+            _audioLevel.value = -60f
+            
+            universalAudioRecorder.startRecording().collect { result ->
+                when (result) {
+                    is UniversalAudioRecorder.RecordingResult.Started -> {
+                        Log.d("MainViewModel", "Audio recording started successfully")
+                        _isListening.value = true  // Set listening to true for audio recording
+                        Log.d("MainViewModel", "Fallback state: isRecording=${_isRecording.value}, isListening=${_isListening.value}, audioFilePath=${_audioFilePath.value}")
                     }
-                    is SpeechRecognitionService.RecognitionResult.Ready -> {
-                        // Recording is ready
+                             is UniversalAudioRecorder.RecordingResult.AudioLevel -> {
+                                 _audioLevel.value = result.level
+                             }
+                    is UniversalAudioRecorder.RecordingResult.Stopped -> {
+                        Log.d("MainViewModel", "Audio recording stopped, file: ${result.filePath}")
+                        _audioFilePath.value = result.filePath
+                        _isRecording.value = false
+                        Log.d("MainViewModel", "Final state: audioFilePath=${_audioFilePath.value}, isRecording=${_isRecording.value}")
+                    }
+                    is UniversalAudioRecorder.RecordingResult.Error -> {
+                        Log.e("MainViewModel", "Audio recording error: ${result.message}")
+                        _errorMessage.value = result.message
+                        _isRecording.value = false
                     }
                 }
             }
@@ -96,7 +193,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun stopRecording() {
         _isRecording.value = false
-        speechRecognitionService.stopRecognition()
+        _isListening.value = false
+        realtimeSpeechRecognition.stopRecognition()
+        val filePath = universalAudioRecorder.stopRecording()
+        if (filePath != null) {
+            _audioFilePath.value = filePath
+        }
     }
     
     fun sendToAI(rawText: String, prompt: String = "") {
@@ -200,6 +302,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         speechRecognitionService.stopRecognition()
+        universalAudioRecorder.stopRecording()
+        realtimeSpeechRecognition.stopRecognition()
         webSocketClient.disconnect()
     }
 }
