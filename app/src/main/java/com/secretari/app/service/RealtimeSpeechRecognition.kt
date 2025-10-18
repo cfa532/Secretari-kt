@@ -85,8 +85,13 @@ class RealtimeSpeechRecognition(private val context: Context) {
         
         // List of well-known speech recognition services to try
         val speechServices = listOf(
-            // Google Speech Services
+            // Try Google Assistant's service first since it works
             ComponentName("com.google.android.googlequicksearchbox", "com.google.android.voicesearch.serviceapi.GoogleRecognitionService"),
+            
+            // Try default system service second
+            null, // This will use the default SpeechRecognizer
+            
+            // Other Google Speech Services
             ComponentName("com.google.android.gms", "com.google.android.gms.speech.serviceapi.GoogleRecognitionService"),
             
             // iFlytek (Chinese speech recognition)
@@ -101,10 +106,7 @@ class RealtimeSpeechRecognition(private val context: Context) {
             ComponentName("com.microsoft.cortana", "com.microsoft.cortana.speech.SpeechService"),
             
             // Baidu (Chinese alternative)
-            ComponentName("com.baidu.speech", "com.baidu.speech.service.SpeechService"),
-            
-            // Default system service
-            null // This will use the default SpeechRecognizer
+            ComponentName("com.baidu.speech", "com.baidu.speech.service.SpeechService")
         )
         
         var lastError: Exception? = null
@@ -165,12 +167,45 @@ class RealtimeSpeechRecognition(private val context: Context) {
                 Log.d("RealtimeSpeech", "End of speech")
             }
             
-            override fun onError(error: Int) {
-                val errorMessage = getErrorText(error)
-                Log.e("RealtimeSpeech", "Error: $errorMessage")
-                channel.trySend(RecognitionResult.Error(errorMessage))
-                isRecording = false
-            }
+                override fun onError(error: Int) {
+                    val errorMessage = getErrorText(error)
+                    Log.e("RealtimeSpeech", "Error: $errorMessage (code: $error)")
+                    when (error) {
+                        SpeechRecognizer.ERROR_NO_MATCH -> {
+                            Log.d("RealtimeSpeech", "No speech detected - user may need to speak louder or closer to mic")
+                            // Restart listening for continuous recognition on non-fatal errors
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                if (isRecording) {
+                                    Log.d("RealtimeSpeech", "Restarting speech recognition after no match")
+                                    startListening(locale)
+                                }
+                            }, 100)
+                        }
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                            Log.d("RealtimeSpeech", "Speech timeout - no speech detected within timeout period")
+                            // Restart listening for continuous recognition
+                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                if (isRecording) {
+                                    Log.d("RealtimeSpeech", "Restarting speech recognition after timeout")
+                                    startListening(locale)
+                                }
+                            }, 100)
+                        }
+                        SpeechRecognizer.ERROR_AUDIO -> Log.d("RealtimeSpeech", "Audio error - microphone may not be working")
+                        SpeechRecognizer.ERROR_CLIENT -> Log.d("RealtimeSpeech", "Client error - speech recognition service issue")
+                        SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> Log.d("RealtimeSpeech", "Permission error - microphone permission may be missing")
+                        SpeechRecognizer.ERROR_NETWORK -> Log.d("RealtimeSpeech", "Network error - speech recognition requires internet")
+                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> Log.d("RealtimeSpeech", "Network timeout - speech recognition service unreachable")
+                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> Log.d("RealtimeSpeech", "Recognizer busy - another app may be using speech recognition")
+                        SpeechRecognizer.ERROR_SERVER -> Log.d("RealtimeSpeech", "Server error - speech recognition service error")
+                        else -> Log.d("RealtimeSpeech", "Unknown error: $error")
+                    }
+                    // Only send error and stop recording for serious errors (not ERROR_NO_MATCH or ERROR_SPEECH_TIMEOUT)
+                    if (error != SpeechRecognizer.ERROR_NO_MATCH && error != SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
+                        channel.trySend(RecognitionResult.Error(errorMessage))
+                        isRecording = false
+                    }
+                }
             
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -179,6 +214,14 @@ class RealtimeSpeechRecognition(private val context: Context) {
                     currentTranscript = text
                     Log.d("RealtimeSpeech", "Final result: $text")
                     channel.trySend(RecognitionResult.FinalText(text))
+                    
+                    // Restart listening for continuous speech recognition
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        if (isRecording) {
+                            Log.d("RealtimeSpeech", "Restarting speech recognition after result")
+                            startListening(locale)
+                        }
+                    }, 100) // Small delay to ensure proper restart
                 }
             }
             
@@ -224,11 +267,16 @@ class RealtimeSpeechRecognition(private val context: Context) {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5) // Allow more results for continuous speech
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-            // Add continuous recognition parameters
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1000)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000)
+            // Configure for better speech detection
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 500) // 0.5 second minimum
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 8000) // 8 seconds silence timeout
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000) // 5 seconds partial silence
+            // Enable continuous recognition
+            putExtra(RecognizerIntent.EXTRA_CONFIDENCE_SCORES, true)
+            putExtra("android.speech.extra.DICTATION_MODE", true)
+            putExtra("android.speech.extra.CONTINUOUS_SPEECH", true)
         }
     }
     

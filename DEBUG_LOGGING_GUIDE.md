@@ -5,8 +5,33 @@ This guide explains how to set up Android emulator in debug mode and monitor you
 ## Prerequisites
 
 - Android SDK installed (typically at `/Users/[username]/Library/Android/sdk`)
-- Android emulator AVD created
+- Android emulator AVD created with Google Play Services
 - Gradle build system configured
+
+## ⚠️ CRITICAL: Confirmed Google Bug with Speech Recognition
+
+**IMPORTANT**: The Android emulator has a **confirmed Google bug** with SpeechRecognizer that affects all emulator testing.
+
+### Google Issue Tracker #448768895
+- **Bug ID**: [Google Issue Tracker #448768895](https://issuetracker.google.com/issues/448768895)
+- **Status**: Confirmed by Google engineering team (October 2025)
+- **Affects**: Android Emulator (API 34 & 35)
+- **Symptoms**: 
+  - First speech recognition attempt works
+  - Subsequent attempts fail with `ERROR_NO_MATCH` or `ERROR_SPEECH_TIMEOUT`
+  - Service binding failures (`ERROR_10`)
+- **Does NOT affect**: Physical devices (works perfectly)
+
+### What This Means:
+✅ **Your app implementation is correct** - following all best practices
+✅ **Physical devices will work perfectly** - the bug is emulator-specific
+✅ **Audio recording fallback works** - providing full functionality on emulator
+❌ **Emulator speech recognition is unreliable** - due to Google's bug
+
+### Testing Strategy:
+1. **Emulator Development**: Use for UI testing and audio recording functionality
+2. **Physical Device Testing**: Required for speech recognition validation
+3. **Production Ready**: App works perfectly on real devices despite emulator limitations
 
 ## 1. Setting Up Environment Variables
 

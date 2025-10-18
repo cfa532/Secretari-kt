@@ -111,7 +111,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 
                 // Use withTimeout to ensure fallback if speech recognition hangs
                 try {
-                    kotlinx.coroutines.withTimeout(5000) { // 5 second timeout
+                       kotlinx.coroutines.withTimeout(1800000) { // 30 minute timeout
                         Log.d("MainViewModel", "Starting flow collection with timeout...")
                         recognitionFlow.collect { result ->
                             Log.d("MainViewModel", "Received result: $result")
@@ -149,9 +149,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
                 } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-                    Log.w("MainViewModel", "Speech recognition timed out, starting fallback")
-                    Toast.makeText(getApplication<Application>(), "Speech recognition timed out, falling back to audio recording", Toast.LENGTH_LONG).show()
-                    startAudioRecordingFallback()
+                    Log.w("MainViewModel", "Speech recognition timed out after 30 minutes, creating record")
+                    Toast.makeText(getApplication<Application>(), "Recording timed out after 30 minutes, saving transcript", Toast.LENGTH_LONG).show()
+                    
+                    // Stop recording and create a record with current transcript
+                    _isRecording.value = false
+                    _isListening.value = false
+                    realtimeSpeechRecognition.stopRecognition()
+                    val filePath = universalAudioRecorder.stopRecording()
+                    if (filePath != null) {
+                        _audioFilePath.value = filePath
+                    }
+                    
+                    // Create record with current transcript and send to AI for summary
+                    val currentTranscript = _transcript.value
+                    if (currentTranscript.isNotEmpty()) {
+                        sendToAI(currentTranscript)
+                    } else {
+                        Log.w("MainViewModel", "No transcript available after timeout")
+                        _errorMessage.value = "No speech was recognized during the recording session"
+                    }
                 } catch (e: Exception) {
                     Log.e("MainViewModel", "Error collecting speech recognition flow: ${e.message}")
                     _errorMessage.value = "Flow collection error: ${e.message}"
