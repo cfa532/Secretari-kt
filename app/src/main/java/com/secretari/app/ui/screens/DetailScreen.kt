@@ -1,18 +1,24 @@
 package com.secretari.app.ui.screens
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.AppConstants
 import com.secretari.app.data.model.RecognizerLocale
@@ -109,16 +115,6 @@ fun DetailScreen(
                 }
             )
         },
-        floatingActionButton = {
-            if (isRecording) {
-                FloatingActionButton(
-                    onClick = onStopRecording,
-                    containerColor = MaterialTheme.colorScheme.error
-                ) {
-                    Icon(Icons.Default.Stop, "Stop")
-                }
-            }
-        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -137,6 +133,15 @@ fun DetailScreen(
                         errorMessage = errorMessage,
                         onStopRecording = onStopRecording
                     )
+                    
+                    // Show preview when there's transcript content
+                    if (transcript.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        PreviewView(
+                            transcript = transcript,
+                            settings = settings
+                        )
+                    }
                 }
                 isStreaming -> {
                     StreamingView(streamedText = streamedText)
@@ -144,6 +149,54 @@ fun DetailScreen(
                 else -> {
                     record?.let {
                         SummaryView(record = it, settings = settings)
+                    }
+                }
+            }
+            
+            // Stop button at the bottom like Records screen
+            if (isRecording) {
+                Spacer(modifier = Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp, vertical = 40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = onStopRecording,
+                        modifier = Modifier
+                            .size(80.dp)
+                            .shadow(
+                                elevation = 6.dp,
+                                shape = CircleShape,
+                                clip = false
+                            )
+                            .border(
+                                width = 0.5.dp,
+                                color = MaterialTheme.colorScheme.error,
+                                shape = CircleShape
+                            ),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 4.dp,
+                            hoveredElevation = 6.dp,
+                            focusedElevation = 6.dp
+                        ),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            "Stop",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1
+                        )
                     }
                 }
             }
@@ -227,13 +280,6 @@ fun RecordingView(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Debug information
-        Text(
-            text = "Debug: Listening=$isListening, AudioLevel=${audioLevel.toInt()}dB, FilePath=${audioFilePath?.takeLast(20) ?: "null"}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
         
         // Display recognized text in a scrollable container
         if (transcript.isNotEmpty()) {
@@ -270,63 +316,6 @@ fun RecordingView(
                         }
                     }
                 }
-            }
-        } else {
-            // Show placeholder when no text is recognized yet
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, false),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Waiting for speech...",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 32.dp)
-                    )
-                    if (isListening) {
-                        Text(
-                            text = "Speak now",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-        }
-        
-        // Show audio level indicator
-        if (audioLevel > -60f) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Audio Level: ${audioLevel.toInt()}dB", style = MaterialTheme.typography.bodySmall)
-        }
-        
-        // Stop button
-        Spacer(modifier = Modifier.height(24.dp))
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Button(
-                onClick = onStopRecording,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError
-                ),
-                modifier = Modifier.size(80.dp)
-            ) {
-                Text(
-                    text = "Stop",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onError
-                )
             }
         }
     }
@@ -447,6 +436,92 @@ fun PulsingDot() {
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.fillMaxSize()
         ) {}
+    }
+}
+
+@Composable
+fun PreviewView(
+    transcript: String,
+    settings: Settings
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 12.dp)
+            ) {
+                Icon(
+                    Icons.Default.Preview,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Preview",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            
+            Text(
+                text = "This is what your transcript will look like:",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            // Show preview based on prompt type
+            when (settings.promptType) {
+                com.secretari.app.data.model.PromptType.SUMMARY -> {
+                    Text(
+                        text = "📝 Summary will be generated from this transcript",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                com.secretari.app.data.model.PromptType.CHECKLIST -> {
+                    Text(
+                        text = "✅ Key points will be extracted as a checklist",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                com.secretari.app.data.model.PromptType.SUBSCRIPTION -> {
+                    Text(
+                        text = "📄 Clean transcription with formatting",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+            }
+            
+            // Show a preview of the transcript
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Text(
+                    text = transcript.take(200) + if (transcript.length > 200) "..." else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
     }
 }
 

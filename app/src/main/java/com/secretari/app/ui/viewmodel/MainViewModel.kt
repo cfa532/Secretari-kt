@@ -219,17 +219,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     fun stopRecording() {
+        Log.d("MainViewModel", "Stopping recording...")
         _isRecording.value = false
         _isListening.value = false
         realtimeSpeechRecognition.stopRecognition()
         val filePath = universalAudioRecorder.stopRecording()
         if (filePath != null) {
             _audioFilePath.value = filePath
+            Log.d("MainViewModel", "Audio file saved: $filePath")
         }
         
         // Create AudioRecord with current transcript and send to AI
         val currentTranscript = _transcript.value
+        Log.d("MainViewModel", "Current transcript length: ${currentTranscript.length}")
         if (currentTranscript.isNotEmpty()) {
+            Log.d("MainViewModel", "Sending transcript to AI: '${currentTranscript.take(50)}...'")
             sendToAI(currentTranscript)
         } else {
             Log.w("MainViewModel", "No transcript available when stopping recording")
@@ -240,7 +244,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun sendToAI(rawText: String, prompt: String = "") {
         viewModelScope.launch {
             val currentSettings = settings.firstOrNull() ?: return@launch
-            val token = userManager.userToken ?: return@launch
+            var token = userManager.userToken
+            
+            // If no token, create a temporary user first
+            if (token == null) {
+                Log.d("MainViewModel", "No user token found, creating temporary user...")
+                val tempUser = userManager.createTempUser()
+                if (tempUser != null) {
+                    token = userManager.userToken
+                    Log.d("MainViewModel", "Temporary user created, token: ${token?.take(10)}...")
+                } else {
+                    Log.e("MainViewModel", "Failed to create temporary user")
+                    _errorMessage.value = "Failed to authenticate with server"
+                    return@launch
+                }
+            }
             
             _isStreaming.value = true
             _streamedText.value = ""
@@ -251,7 +269,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val defaultPrompt = currentSettings.prompt[currentSettings.promptType]
                 ?.get(currentSettings.selectedLocale) ?: ""
             
-            webSocketClient.connect(token) { message ->
+            webSocketClient.connect(token!!) { message ->
                 when (message) {
                     is WebSocketClient.WebSocketMessage.StreamData -> {
                         // Accumulate streaming chunks word by word
