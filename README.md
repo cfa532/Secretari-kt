@@ -23,7 +23,7 @@ Secretari is a powerful speech-to-text application that allows users to:
   - Subscription: Clean transcription with formatting
 - **Multi-language Support**: 8+ languages for recognition and summarization
 - **Local Storage**: All recordings stored locally using Room database
-- **User Management**: Registration, login, and account management
+- **User Management**: Comprehensive authentication system with JWT tokens, registration, login, and account management
 - **Settings**: Customizable recognition language, prompt types, and audio thresholds
 
 ### Technical Features
@@ -35,6 +35,36 @@ Secretari is a powerful speech-to-text application that allows users to:
 - DataStore for preferences
 - Encrypted SharedPreferences for sensitive data
 - Material Design 3 UI
+
+## User Management System
+
+### Authentication Features
+- **JWT Token Authentication**: Secure token-based authentication with encrypted storage
+- **User Registration**: Create new accounts with profile information
+- **User Login**: Secure login with username/password validation
+- **Temporary Users**: Automatic temporary account creation for unregistered users
+- **Profile Management**: Update user information, email, and preferences
+- **Account Deletion**: Secure account removal with data cleanup
+- **Coupon Redemption**: Support for promotional coupon codes
+- **Server Status**: Monitor backend service health and status
+
+### User States
+- **SIGNED_IN**: User is logged in with valid JWT token
+- **SIGNED_OUT**: User is registered but not logged in
+- **UNREGISTERED**: User is using temporary account (device ID)
+
+### Security Features
+- **Encrypted Storage**: All sensitive data (tokens, device IDs) stored with AES256 encryption
+- **Android Keystore**: Master keys managed by Android Keystore for maximum security
+- **HTTPS Communication**: All API communications encrypted
+- **Bearer Token Authentication**: JWT tokens automatically included in authenticated requests
+- **Data Separation**: Sensitive data in encrypted storage, preferences in DataStore
+
+### Backend Integration
+- **REST API**: Full integration with FastAPI backend
+- **WebSocket Authentication**: JWT tokens used for authenticated AI requests
+- **Error Handling**: Comprehensive error handling for network and authentication failures
+- **State Management**: Reactive state management with Kotlin Flows
 
 ## Architecture
 

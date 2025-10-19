@@ -10,6 +10,7 @@ import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.Settings
 import com.secretari.app.data.model.User
 import com.secretari.app.data.network.WebSocketClient
+import com.secretari.app.data.network.ServerStatusResponse
 import com.secretari.app.data.repository.AudioRecordRepository
 import com.secretari.app.service.SpeechRecognitionService
 import com.secretari.app.service.UniversalAudioRecorder
@@ -45,6 +46,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     private val _streamedText = MutableStateFlow("")
     val streamedText: StateFlow<String> = _streamedText.asStateFlow()
+    
+    private val _shouldNavigateBack = MutableStateFlow(false)
+    val shouldNavigateBack: StateFlow<Boolean> = _shouldNavigateBack.asStateFlow()
     
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
@@ -222,6 +226,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (filePath != null) {
             _audioFilePath.value = filePath
         }
+        
+        // Create AudioRecord with current transcript and send to AI
+        val currentTranscript = _transcript.value
+        if (currentTranscript.isNotEmpty()) {
+            sendToAI(currentTranscript)
+        } else {
+            Log.w("MainViewModel", "No transcript available when stopping recording")
+            _errorMessage.value = "No speech was recognized during the recording session"
+        }
     }
     
     fun sendToAI(rawText: String, prompt: String = "") {
@@ -231,6 +244,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             
             _isStreaming.value = true
             _streamedText.value = ""
+            _shouldNavigateBack.value = false
+            
+            Log.d("MainViewModel", "Starting AI processing for transcript: '$rawText'")
             
             val defaultPrompt = currentSettings.prompt[currentSettings.promptType]
                 ?.get(currentSettings.selectedLocale) ?: ""
@@ -238,28 +254,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             webSocketClient.connect(token) { message ->
                 when (message) {
                     is WebSocketClient.WebSocketMessage.StreamData -> {
+                        // Accumulate streaming chunks word by word
                         _streamedText.value += message.data
+                        Log.d("MainViewModel", "Received stream chunk: '${message.data}' | Total: '${_streamedText.value}'")
                     }
                     is WebSocketClient.WebSocketMessage.Result -> {
-                        // Handle final result
-                        val record = AudioRecord(
-                            transcript = rawText,
-                            locale = currentSettings.selectedLocale
-                        )
-                        record.resultFromAI(AudioRecord.TaskType.SUMMARIZE, message.answer, currentSettings)
+                        Log.d("MainViewModel", "Received result: eof=${message.eof}, answer=${message.answer}")
                         
-                        viewModelScope.launch {
-                            repository.insert(record)
-                        }
-                        
+                        // Only create and save AudioRecord when eof=true (final chunk)
                         if (message.eof) {
+                            // Use the accumulated streaming text as the final summary
+                            val finalSummary = _streamedText.value
+                            val record = AudioRecord(
+                                transcript = rawText,
+                                locale = currentSettings.selectedLocale
+                            )
+                            record.resultFromAI(AudioRecord.TaskType.SUMMARIZE, finalSummary, currentSettings)
+                            
+                            viewModelScope.launch {
+                                repository.insert(record)
+                                Log.d("MainViewModel", "AudioRecord saved to database with summary: $finalSummary")
+                            }
+                            
                             _isStreaming.value = false
+                            _shouldNavigateBack.value = true
                             webSocketClient.disconnect()
+                        } else {
+                            // For non-final chunks, accumulate the answer (this shouldn't happen in current backend)
+                            _streamedText.value += message.answer
+                            Log.d("MainViewModel", "Received non-final result chunk: ${message.answer}")
                         }
                     }
                     is WebSocketClient.WebSocketMessage.Error -> {
+                        Log.e("MainViewModel", "WebSocket error: ${message.message}")
                         _errorMessage.value = message.message
                         _isStreaming.value = false
+                        _shouldNavigateBack.value = true
                         webSocketClient.disconnect()
                     }
                 }
@@ -318,8 +348,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    fun redeemCoupon(coupon: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = userManager.redeemCoupon(coupon)
+            onResult(success)
+        }
+    }
+    
+    fun getServerStatus(onResult: (ServerStatusResponse?) -> Unit) {
+        viewModelScope.launch {
+            val status = userManager.getServerStatus()
+            onResult(status)
+        }
+    }
+    
     fun clearError() {
         _errorMessage.value = null
+    }
+    
+    fun resetNavigationFlag() {
+        _shouldNavigateBack.value = false
     }
     
     override fun onCleared() {

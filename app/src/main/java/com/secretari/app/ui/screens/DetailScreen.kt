@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.secretari.app.data.model.AudioRecord
+import com.secretari.app.data.model.AppConstants
 import com.secretari.app.data.model.RecognizerLocale
 import com.secretari.app.data.model.Settings
 import kotlinx.coroutines.delay
@@ -34,7 +35,7 @@ fun DetailScreen(
     onBack: () -> Unit,
     onShare: () -> Unit,
     onTranslate: () -> Unit,
-    onRegenerate: () -> Unit,
+    onRegenerate: () -> Unit = {},
     onLocaleChange: (RecognizerLocale) -> Unit,
     isListening: Boolean = false,
     audioLevel: Float = -60f,
@@ -133,7 +134,8 @@ fun DetailScreen(
                         isListening = isListening,
                         audioLevel = audioLevel,
                         audioFilePath = audioFilePath,
-                        errorMessage = errorMessage
+                        errorMessage = errorMessage,
+                        onStopRecording = onStopRecording
                     )
                 }
                 isStreaming -> {
@@ -178,7 +180,8 @@ fun RecordingView(
     isListening: Boolean = false,
     audioLevel: Float = -60f,
     audioFilePath: String? = null,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    onStopRecording: () -> Unit = {}
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
@@ -232,14 +235,69 @@ fun RecordingView(
             modifier = Modifier.padding(bottom = 8.dp)
         )
         
-        LazyColumn {
-            items(transcript.split("\n")) { line ->
-                if (line.isNotEmpty()) {
+        // Display recognized text in a scrollable container
+        if (transcript.isNotEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, false),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
                     Text(
-                        text = line,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(vertical = 4.dp)
+                        text = "Recognized Text:",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+                    
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 300.dp)
+                    ) {
+                        items(transcript.split("\n")) { line ->
+                            if (line.isNotEmpty()) {
+                                Text(
+                                    text = line,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Show placeholder when no text is recognized yet
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, false),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Waiting for speech...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 32.dp)
+                    )
+                    if (isListening) {
+                        Text(
+                            text = "Speak now",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
@@ -248,6 +306,28 @@ fun RecordingView(
         if (audioLevel > -60f) {
             Spacer(modifier = Modifier.height(16.dp))
             Text("Audio Level: ${audioLevel.toInt()}dB", style = MaterialTheme.typography.bodySmall)
+        }
+        
+        // Stop button
+        Spacer(modifier = Modifier.height(24.dp))
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Button(
+                onClick = onStopRecording,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ),
+                modifier = Modifier.size(80.dp)
+            ) {
+                Text(
+                    text = "Stop",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onError
+                )
+            }
         }
     }
 }
@@ -261,22 +341,59 @@ fun StreamingView(streamedText: String) {
         ) {
             PulsingDot()
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Streaming from AI", style = MaterialTheme.typography.bodyMedium)
+            Text("AI is generating summary...", style = MaterialTheme.typography.bodyMedium)
         }
         
-        LazyColumn {
-            item {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, false),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
                 Text(
-                    text = streamedText,
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Generated Summary:",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
+                
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 300.dp)
+                ) {
+                    item {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (streamedText.isNotEmpty()) streamedText else "Waiting for AI response...",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            
+                            // Show typing cursor when streaming
+                            if (streamedText.isNotEmpty()) {
+                                Text(
+                                    text = "|",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun SummaryView(record: AudioRecord, settings: Settings) {
+fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_SETTINGS) {
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
     
     LazyColumn(modifier = Modifier.padding(16.dp)) {

@@ -24,5 +24,8 @@
     <string name="email">Correo electrónico</string>
     <string name="first_name">Nombre</string>
     <string name="last_name">Apellido</string>
+    <string name="push_start_button">Presiona el botón START para grabar tu voz. Un resumen se generará automáticamente después de presionar el botón STOP.</string>
+    <string name="select_language_warning">Primero asegúrate de seleccionar el idioma correcto para el reconocimiento en configuración ⚙️ De lo contrario, el reconocedor de voz integrado no puede funcionar correctamente.</string>
+    <string name="no_summary">Sin resumen. Intenta regenerar el resumen</string>
 </resources>
 

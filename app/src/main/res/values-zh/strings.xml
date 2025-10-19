@@ -24,5 +24,8 @@
     <string name="email">电子邮件</string>
     <string name="first_name">名字</string>
     <string name="last_name">姓氏</string>
+    <string name="push_start_button">按下START按钮录制您的语音。按下STOP按钮后将自动生成摘要。</string>
+    <string name="select_language_warning">首先确保在设置中选择正确的识别语言 ⚙️ 否则内置语音识别器无法正常工作。</string>
+    <string name="no_summary">无摘要。尝试重新生成摘要</string>
 </resources>
 

@@ -23,6 +23,13 @@ class RealtimeSpeechRecognition(private val context: Context) {
     private var isRecording = false
     private var currentTranscript = ""
     
+    // Recognition optimization data
+    private val recognitionHistory = mutableListOf<RecognitionResult>()
+    private var averageConfidence = 0.8f
+    private var adaptiveThreshold = 0.7f
+    private var noiseLevel = 0f
+    private var consecutiveLowConfidence = 0
+    
     sealed class RecognitionResult {
         data class PartialText(val text: String) : RecognitionResult()
         data class FinalText(val text: String) : RecognitionResult()
@@ -30,6 +37,13 @@ class RealtimeSpeechRecognition(private val context: Context) {
         object Ready : RecognitionResult()
         object Listening : RecognitionResult()
     }
+    
+    // Data class for tracking recognition results with confidence
+    private data class RecognitionWithConfidence(
+        val text: String,
+        val confidence: Float,
+        val timestamp: Long = System.currentTimeMillis()
+    )
     
     fun startRealtimeRecognition(locale: String): Flow<RecognitionResult> = callbackFlow {
         Log.d("RealtimeSpeech", "=== CALLBACK FLOW STARTED ===")
@@ -231,11 +245,22 @@ class RealtimeSpeechRecognition(private val context: Context) {
             
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val confidenceScores = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
+                
                 if (!matches.isNullOrEmpty()) {
-                    val text = matches[0]
-                    currentTranscript = text
-                    Log.d("RealtimeSpeech", "Final result: $text")
-                    channel.trySend(RecognitionResult.FinalText(text))
+                    Log.d("RealtimeSpeech", "Raw results: ${matches.joinToString(", ")}")
+                    Log.d("RealtimeSpeech", "Confidence scores: ${confidenceScores?.joinToString(", ")}")
+                    
+                    // Use optimization algorithm to select best result
+                    val bestResult = selectBestResult(matches, confidenceScores)
+                    
+                    if (bestResult != null) {
+                        currentTranscript = bestResult.text
+                        Log.d("RealtimeSpeech", "Optimized result: '${bestResult.text}' (confidence: ${bestResult.confidence})")
+                        channel.trySend(RecognitionResult.FinalText(bestResult.text))
+                    } else {
+                        Log.d("RealtimeSpeech", "No result passed optimization filters")
+                    }
                 } else {
                     Log.d("RealtimeSpeech", "No final results received")
                 }
@@ -253,8 +278,13 @@ class RealtimeSpeechRecognition(private val context: Context) {
             
             override fun onPartialResults(partialResults: Bundle?) {
                 val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val confidenceScores = partialResults?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
+                
                 if (!matches.isNullOrEmpty()) {
-                    val text = matches[0]
+                    // For partial results, we're more lenient with filtering
+                    val bestResult = selectBestResult(matches, confidenceScores)
+                    val text = bestResult?.text ?: matches[0] // Fallback to first result
+                    
                     Log.d("RealtimeSpeech", "Partial result: $text")
                     channel.trySend(RecognitionResult.PartialText(text))
                 }
@@ -313,6 +343,178 @@ class RealtimeSpeechRecognition(private val context: Context) {
         speechRecognizer?.cancel()
         speechRecognizer?.destroy()
         speechRecognizer = null
+    }
+    
+    // ===== RECOGNITION OPTIMIZATION ALGORITHMS =====
+    
+    /**
+     * Analyzes multiple recognition results and selects the best one based on confidence scores
+     * and contextual validation
+     */
+    private fun selectBestResult(results: List<String>, confidenceScores: FloatArray?): RecognitionWithConfidence? {
+        if (results.isEmpty()) return null
+        
+        val confidences = confidenceScores ?: FloatArray(results.size) { 0.5f }
+        
+        // Combine results with confidence scores
+        val resultWithConfidence = results.zip(confidences.toList()).map { (text, confidence) ->
+            RecognitionWithConfidence(text, confidence)
+        }
+        
+        // Apply filtering and selection algorithms
+        val filteredResults = filterResults(resultWithConfidence)
+        val bestResult = selectOptimalResult(filteredResults)
+        
+        // Update recognition history for adaptive learning
+        bestResult?.let { updateRecognitionHistory(it) }
+        
+        return bestResult
+    }
+    
+    /**
+     * Filters out low-quality results using multiple criteria
+     */
+    private fun filterResults(results: List<RecognitionWithConfidence>): List<RecognitionWithConfidence> {
+        return results.filter { result ->
+            // Confidence threshold (adaptive based on history)
+            val confidenceThreshold = calculateAdaptiveThreshold()
+            if (result.confidence < confidenceThreshold) {
+                consecutiveLowConfidence++
+                return@filter false
+            }
+            
+            // Length validation (too short or too long results are suspicious)
+            if (result.text.length < 2 || result.text.length > 200) {
+                return@filter false
+            }
+            
+            // Noise level adjustment
+            if (noiseLevel > 0.7f && result.confidence < 0.8f) {
+                return@filter false
+            }
+            
+            consecutiveLowConfidence = 0
+            true
+        }
+    }
+    
+    /**
+     * Selects the optimal result using context-aware algorithms
+     */
+    private fun selectOptimalResult(results: List<RecognitionWithConfidence>): RecognitionWithConfidence? {
+        if (results.isEmpty()) return null
+        
+        // If only one result, return it if it meets minimum criteria
+        if (results.size == 1) {
+            return if (results[0].confidence >= 0.6f) results[0] else null
+        }
+        
+        // Score each result based on multiple factors
+        val scoredResults = results.map { result ->
+            val confidenceScore = result.confidence
+            val contextScore = calculateContextScore(result.text)
+            val lengthScore = calculateLengthScore(result.text)
+            val noiseAdjustment = if (noiseLevel > 0.5f) 0.1f else 0f
+            
+            val totalScore = confidenceScore * 0.5f + contextScore * 0.3f + lengthScore * 0.2f - noiseAdjustment
+            result to totalScore
+        }
+        
+        // Return the result with highest score
+        return scoredResults.maxByOrNull { it.second }?.first
+    }
+    
+    /**
+     * Calculates context score based on previous recognition history
+     */
+    private fun calculateContextScore(text: String): Float {
+        if (recognitionHistory.isEmpty()) return 0.5f
+        
+        // Simple context scoring - can be enhanced with NLP
+        val recentResults = recognitionHistory.takeLast(5).filterIsInstance<RecognitionResult.FinalText>()
+        
+        // Check for word repetition patterns (might indicate recognition issues)
+        val wordRepetition = recentResults.any { it.text.contains(text) }
+        if (wordRepetition) return 0.3f
+        
+        // Check for reasonable word transitions (basic implementation)
+        val lastWords = recentResults.lastOrNull()?.text?.split(" ")?.takeLast(2) ?: emptyList()
+        val currentWords = text.split(" ")
+        
+        // Basic grammar/context validation
+        return when {
+            currentWords.size == 1 && lastWords.isNotEmpty() -> 0.7f // Single word continuation
+            currentWords.size > 1 -> 0.8f // Multi-word phrases
+            else -> 0.5f
+        }
+    }
+    
+    /**
+     * Calculates length-based score for result validation
+     */
+    private fun calculateLengthScore(text: String): Float {
+        return when {
+            text.length in 3..50 -> 1.0f // Optimal length
+            text.length in 1..2 -> 0.7f // Short words (numbers, articles)
+            text.length in 51..100 -> 0.8f // Longer phrases
+            else -> 0.3f // Too short or too long
+        }
+    }
+    
+    /**
+     * Calculates adaptive confidence threshold based on recognition history
+     */
+    private fun calculateAdaptiveThreshold(): Float {
+        // Start with base threshold
+        var threshold = 0.7f
+        
+        // Adjust based on recent success rate
+        val recentResults = recognitionHistory.takeLast(10)
+        if (recentResults.isNotEmpty()) {
+            val successRate = recentResults.count { it is RecognitionResult.FinalText } / recentResults.size.toFloat()
+            
+            when {
+                successRate > 0.8f -> threshold -= 0.1f // Lower threshold if doing well
+                successRate < 0.5f -> threshold += 0.1f // Raise threshold if struggling
+            }
+        }
+        
+        // Adjust based on noise level
+        if (noiseLevel > 0.6f) threshold += 0.1f
+        if (noiseLevel < 0.3f) threshold -= 0.05f
+        
+        // Adjust based on consecutive low confidence
+        if (consecutiveLowConfidence > 3) threshold -= 0.1f
+        
+        return threshold.coerceIn(0.4f, 0.9f)
+    }
+    
+    /**
+     * Updates recognition history for adaptive learning
+     */
+    private fun updateRecognitionHistory(result: RecognitionWithConfidence) {
+        recognitionHistory.add(RecognitionResult.FinalText(result.text))
+        
+        // Keep only recent history (last 50 results)
+        if (recognitionHistory.size > 50) {
+            recognitionHistory.removeAt(0)
+        }
+        
+        // Update average confidence
+        val recentConfidences = recognitionHistory.takeLast(20)
+            .filterIsInstance<RecognitionResult.FinalText>()
+            .map { 0.8f } // Simplified - in real implementation, we'd track actual confidences
+        
+        if (recentConfidences.isNotEmpty()) {
+            averageConfidence = recentConfidences.average().toFloat()
+        }
+    }
+    
+    /**
+     * Updates noise level based on audio monitoring
+     */
+    private fun updateNoiseLevel(level: Float) {
+        noiseLevel = (noiseLevel * 0.9f + level * 0.1f).coerceIn(0f, 1f)
     }
     
     fun getCurrentTranscript(): String = currentTranscript

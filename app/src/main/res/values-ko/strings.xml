@@ -24,5 +24,8 @@
     <string name="email">이메일</string>
     <string name="first_name">이름</string>
     <string name="last_name">성</string>
+    <string name="push_start_button">START 버튼을 눌러 음성을 녹음하세요. STOP 버튼을 누르면 자동으로 요약이 생성됩니다.</string>
+    <string name="select_language_warning">먼저 설정에서 인식할 올바른 언어를 선택하세요 ⚙️ 그렇지 않으면 내장 음성 인식기가 제대로 작동하지 않습니다.</string>
+    <string name="no_summary">요약 없음. 요약을 다시 생성해보세요</string>
 </resources>
 

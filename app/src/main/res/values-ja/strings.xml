@@ -24,5 +24,8 @@
     <string name="email">メール</string>
     <string name="first_name">名</string>
     <string name="last_name">姓</string>
+    <string name="push_start_button">STARTボタンを押して音声を録音してください。STOPボタンを押すと自動的に要約が生成されます。</string>
+    <string name="select_language_warning">まず設定で認識する正しい言語を選択してください ⚙️ そうしないと内蔵音声認識が正しく動作しません。</string>
+    <string name="no_summary">要約なし。要約を再生成してください</string>
 </resources>
 

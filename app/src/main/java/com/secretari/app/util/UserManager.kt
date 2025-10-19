@@ -195,6 +195,29 @@ class UserManager(private val context: Context) {
         }
     }
     
+    suspend fun redeemCoupon(coupon: String): Boolean {
+        val token = userToken ?: return false
+        return try {
+            val response = apiService.redeemCoupon("Bearer $token", coupon)
+            response.isSuccessful && response.body() == true
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    suspend fun getServerStatus(): ServerStatusResponse? {
+        return try {
+            val response = apiService.getServerStatus()
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
     private fun getDeviceId(): String {
         val deviceId = encryptedPrefs.getString("device_id", null)
         return if (deviceId != null) {

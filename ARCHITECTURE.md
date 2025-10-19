@@ -68,7 +68,7 @@ Encapsulated in ViewModels and Repository classes
 **Location**: `app/src/main/java/com/secretari/app/util/`
 
 - `SettingsManager`: Persistent settings using DataStore
-- `UserManager`: User authentication and profile management with encrypted storage
+- `UserManager`: Comprehensive user authentication and profile management with encrypted storage
 
 ## Data Flow
 
@@ -103,17 +103,51 @@ Room Database persists record
 ```
 App Launch
     ↓
-UserManager.init()
+UserManager.checkLoginStatus()
     ↓
-Check DataStore for user
+Check encrypted storage for JWT token
     ↓
-If no user: createTempUser()
+If token exists: LoginStatus.SIGNED_IN
+    ↓
+If no token: createTempUser()
     ↓
 API call to /secretari/users/temp
     ↓
-Store encrypted token in SharedPreferences
+Store encrypted JWT token in EncryptedSharedPreferences
     ↓
-Store user in DataStore
+Store user data in DataStore
+    ↓
+LoginStatus.UNREGISTERED (temp user)
+```
+
+### User Registration Flow
+```
+User enters registration details
+    ↓
+MainViewModel.register()
+    ↓
+UserManager.register()
+    ↓
+API call to /secretari/users/register
+    ↓
+Store user profile in DataStore
+    ↓
+LoginStatus.SIGNED_OUT (registered but not logged in)
+```
+
+### User Login Flow
+```
+User enters credentials
+    ↓
+MainViewModel.login()
+    ↓
+UserManager.login()
+    ↓
+API call to /secretari/token
+    ↓
+Store JWT token in EncryptedSharedPreferences
+    ↓
+LoginStatus.SIGNED_IN
 ```
 
 ## State Management
@@ -188,6 +222,251 @@ Currently using manual DI with singleton managers:
 - WSS for WebSocket
 - Bearer token authentication
 - Certificate pinning (recommended for production)
+
+## User Management System
+
+### Overview
+The app implements a comprehensive user management system with JWT token-based authentication, supporting multiple user states and secure data storage.
+
+### User States
+```kotlin
+enum class LoginStatus {
+    SIGNED_IN,      // User is logged in with valid JWT token
+    SIGNED_OUT,     // User is registered but not logged in
+    UNREGISTERED    // User is using temporary account (device ID)
+}
+```
+
+### Authentication Features
+
+#### 1. **JWT Token Management**
+- **Secure Storage**: JWT tokens stored in `EncryptedSharedPreferences` with AES256 encryption
+- **Automatic Inclusion**: All authenticated API calls automatically include `Bearer $token` header
+- **Token Persistence**: Tokens persist across app restarts and are automatically retrieved
+- **Token Validation**: Backend validates tokens on each request
+
+#### 2. **User Registration**
+```kotlin
+suspend fun register(user: User): Boolean {
+    // Calls /secretari/users/register endpoint
+    // Creates new user account with profile information
+    // Returns success/failure status
+}
+```
+- **Profile Information**: Username, password, email, first name, last name
+- **Validation**: Backend validates unique username and email
+- **State Transition**: Moves user from UNREGISTERED to SIGNED_OUT
+
+#### 3. **User Login**
+```kotlin
+suspend fun login(username: String, password: String): Boolean {
+    // Calls /secretari/token endpoint
+    // Validates credentials and returns JWT token
+    // Stores token securely and updates login status
+}
+```
+- **Credential Validation**: Backend validates username/password combination
+- **JWT Token**: Returns secure JWT token with user information
+- **State Transition**: Moves user from SIGNED_OUT to SIGNED_IN
+
+#### 4. **Temporary User Creation**
+```kotlin
+suspend fun createTempUser(): User? {
+    // Creates temporary user with device ID
+    // Gets token for immediate access without registration
+    // Used for unregistered users to access basic features
+}
+```
+- **Device ID**: Uses unique device identifier as username
+- **Immediate Access**: Provides token for basic app functionality
+- **State**: User remains in UNREGISTERED state
+
+#### 5. **User Profile Management**
+```kotlin
+suspend fun updateUser(user: User): Boolean {
+    // Updates user profile information
+    // Requires valid JWT token
+    // Updates stored user data
+}
+```
+- **Profile Updates**: Email, first name, last name, password
+- **Authentication Required**: All updates require valid JWT token
+- **Data Synchronization**: Updates both local and backend data
+
+#### 6. **Account Management**
+```kotlin
+suspend fun deleteAccount(): Boolean {
+    // Deletes user account permanently
+    // Clears all stored user data and tokens
+    // Requires valid JWT token
+}
+```
+- **Account Deletion**: Permanently removes user account
+- **Data Cleanup**: Clears all stored user data, tokens, and preferences
+- **State Transition**: Moves user back to UNREGISTERED state
+
+#### 7. **Coupon Redemption**
+```kotlin
+suspend fun redeemCoupon(coupon: String): Boolean {
+    // Redeems coupon codes for credits/benefits
+    // Requires valid JWT token
+    // Updates user balance/status
+}
+```
+- **Coupon Codes**: Supports promotional coupon redemption
+- **Credit System**: Can add credits to user balance
+- **Authentication Required**: Requires valid JWT token
+
+#### 8. **Server Status Monitoring**
+```kotlin
+suspend fun getServerStatus(): ServerStatusResponse? {
+    // Gets server health and status information
+    // Returns server time, connection status, model info
+}
+```
+- **Health Monitoring**: Checks server connectivity and status
+- **Service Information**: Returns LLM model, token limits, maintenance status
+- **No Authentication Required**: Public endpoint for status checks
+
+### Security Implementation
+
+#### 1. **Encrypted Storage**
+```kotlin
+private val encryptedPrefs = EncryptedSharedPreferences.create(
+    context,
+    "secret_shared_prefs",
+    masterKey,
+    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+)
+```
+- **AES256 Encryption**: All sensitive data encrypted with AES256
+- **Android Keystore**: Master key managed by Android Keystore
+- **Secure Storage**: JWT tokens, device IDs, and sensitive preferences
+
+#### 2. **Data Separation**
+- **EncryptedSharedPreferences**: Sensitive data (tokens, device ID)
+- **DataStore**: Non-sensitive user preferences and profile data
+- **Room Database**: Local recordings and app data
+
+#### 3. **Network Security**
+- **HTTPS**: All API communications encrypted
+- **Bearer Authentication**: JWT tokens in Authorization headers
+- **Token Validation**: Backend validates all tokens on each request
+
+### Integration with UI
+
+#### 1. **State Management**
+```kotlin
+// ViewModel
+private val _loginStatus = MutableStateFlow(UserManager.LoginStatus.SIGNED_OUT)
+val loginStatus: StateFlow<UserManager.LoginStatus> = _loginStatus.asStateFlow()
+
+// Composable
+val loginStatus by viewModel.loginStatus.collectAsState()
+```
+
+#### 2. **UI State Handling**
+- **MainScreen**: Shows different options based on login status
+- **AccountScreen**: Handles login/registration forms
+- **Navigation**: Different flows for authenticated vs unauthenticated users
+
+#### 3. **Error Handling**
+```kotlin
+fun login(username: String, password: String, onResult: (Boolean) -> Unit) {
+    viewModelScope.launch {
+        val success = userManager.login(username, password)
+        if (success) {
+            _loginStatus.value = UserManager.LoginStatus.SIGNED_IN
+        }
+        onResult(success) // UI callback for success/failure
+    }
+}
+```
+
+### Backend Integration
+
+#### API Endpoints
+- **POST /secretari/token**: User login and token generation
+- **POST /secretari/users/register**: User registration
+- **POST /secretari/users/temp**: Temporary user creation
+- **PUT /secretari/users**: User profile updates
+- **DELETE /secretari/users**: Account deletion
+- **POST /secretari/users/redeem**: Coupon redemption
+- **GET /secretari/server/status**: Server status check
+
+#### Request/Response Models
+```kotlin
+// Login Request
+@FormUrlEncoded
+@POST("secretari/token")
+suspend fun fetchToken(
+    @Field("username") username: String,
+    @Field("password") password: String
+): Response<TokenResponse>
+
+// Registration Request
+data class RegisterRequest(
+    val username: String,
+    val password: String,
+    val family_name: String,
+    val given_name: String,
+    val email: String,
+    val id: String
+)
+```
+
+### Usage Examples
+
+#### 1. **Check Login Status**
+```kotlin
+val loginStatus by viewModel.loginStatus.collectAsState()
+when (loginStatus) {
+    UserManager.LoginStatus.SIGNED_IN -> {
+        // Show authenticated UI
+    }
+    UserManager.LoginStatus.SIGNED_OUT -> {
+        // Show login form
+    }
+    UserManager.LoginStatus.UNREGISTERED -> {
+        // Show registration form
+    }
+}
+```
+
+#### 2. **User Login**
+```kotlin
+viewModel.login(username, password) { success ->
+    if (success) {
+        // Navigate to main screen
+        navController.navigate("main")
+    } else {
+        // Show error message
+        showError("Login failed")
+    }
+}
+```
+
+#### 3. **User Registration**
+```kotlin
+val user = User(
+    username = "john_doe",
+    password = "secure_password",
+    email = "john@example.com",
+    familyName = "Doe",
+    givenName = "John"
+)
+
+viewModel.register(user) { success ->
+    if (success) {
+        // Show login form
+        showLoginForm()
+    } else {
+        // Show error message
+        showError("Registration failed")
+    }
+}
+```
 
 ## Error Handling
 
@@ -287,13 +566,14 @@ NavGraph
     ↓
 Screens ←→ MainViewModel
               ↓
-         ┌────┴────┬──────────┬──────────────┐
-         ↓         ↓          ↓              ↓
-    Repository  Settings  UserManager  WebSocket
-         ↓      Manager                   Client
-    AudioRecordDao
-         ↓
-    AppDatabase
+         ┌────┴────┬──────────┬──────────────┬──────────────┐
+         ↓         ↓          ↓              ↓              ↓
+    Repository  Settings  UserManager    WebSocket    ApiService
+         ↓      Manager      ↓            Client         ↓
+    AudioRecordDao           ↓                         Backend
+         ↓              EncryptedPrefs                (FastAPI)
+    AppDatabase              ↓
+                        JWT Tokens
 ```
 
 ## Configuration

@@ -32,6 +32,15 @@ interface ApiService {
     @GET("secretari/notice")
     suspend fun getNotice(): Response<String>
     
+    @POST("secretari/users/redeem")
+    suspend fun redeemCoupon(
+        @Header("Authorization") token: String,
+        @Query("coupon") coupon: String
+    ): Response<Boolean>
+    
+    @GET("secretari/server/status")
+    suspend fun getServerStatus(): Response<ServerStatusResponse>
+    
     @FormUrlEncoded
     @POST("secretari/token")
     suspend fun fetchToken(
@@ -129,5 +138,16 @@ data class UserData(
 data class TokenResponse(
     val access_token: String,
     val token_type: String
+)
+
+data class ServerStatusResponse(
+    val server_time: String,
+    val leither_port: Int?,
+    val leither_connected: Boolean,
+    val active_connections: Int,
+    val llm_model: String,
+    val server_maintenance: String,
+    val max_token_limits: Map<String, Int>,
+    val error: String? = null
 )
 

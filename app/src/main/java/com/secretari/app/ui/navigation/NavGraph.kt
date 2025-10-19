@@ -14,6 +14,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,13 +51,14 @@ fun NavGraph(
     val audioLevel by viewModel.audioLevel.collectAsState()
     val audioFilePath by viewModel.audioFilePath.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val shouldNavigateBack by viewModel.shouldNavigateBack.collectAsState()
     
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
             MainScreen(
                 records = records,
                 loginStatus = loginStatus,
-                onRecordClick = { record ->
+                onRecordClick = { _ ->
                     navController.navigate(Screen.Detail.route)
                 },
                 onDeleteRecord = { record ->
@@ -82,6 +84,14 @@ fun NavGraph(
         }
         
         composable(Screen.Detail.route) {
+            // Handle navigation back to main screen when AI processing is complete
+            LaunchedEffect(shouldNavigateBack) {
+                if (shouldNavigateBack) {
+                    navController.popBackStack()
+                    viewModel.resetNavigationFlag()
+                }
+            }
+            
             DetailScreen(
                 isRecording = isRecording,
                 isStreaming = isStreaming,
@@ -91,9 +101,6 @@ fun NavGraph(
                 settings = settings,
                 onStopRecording = {
                     viewModel.stopRecording()
-                    if (transcript.isNotEmpty()) {
-                        viewModel.sendToAI(transcript)
-                    }
                 },
                 onSendToAI = { text ->
                     viewModel.sendToAI(text)

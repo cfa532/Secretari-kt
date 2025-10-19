@@ -50,7 +50,7 @@ class UniversalAudioRecorder(private val context: Context) {
             mediaRecorder?.start()
             
             isRecording = true
-            val startTime = System.currentTimeMillis()
+            val _startTime = System.currentTimeMillis()
             
             Log.d("UniversalRecorder", "Recording started: ${audioFile?.absolutePath}")
             trySend(RecordingResult.Started)

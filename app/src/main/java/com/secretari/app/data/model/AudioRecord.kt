@@ -33,7 +33,7 @@ data class AudioRecord(
         TRANSLATE, SUMMARIZE
     }
     
-    fun resultFromAI(taskType: TaskType, summaryText: String, settings: Settings) {
+    fun resultFromAI(_taskType: TaskType, summaryText: String, settings: Settings) {
         when {
             settings.promptType == PromptType.SUMMARY || settings.promptType == PromptType.SUBSCRIPTION -> {
                 val currentSummary = summary[locale] ?: ""
@@ -42,7 +42,7 @@ data class AudioRecord(
             else -> {
                 // Memo/checklist type - parse JSON
                 try {
-                    val jsonString = getAIJson(summaryText)
+                    val _jsonString = getAIJson(summaryText)
                     // Parse JSON and update memo
                     // This would need proper JSON parsing in real implementation
                 } catch (e: Exception) {
