@@ -136,7 +136,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.FinalText -> {
                                     Log.d("MainViewModel", "Final text: ${result.text}")
-                                    _transcript.value = result.text
+                                    _transcript.value += result.text + " "
                                     _isListening.value = false
                                 }
                                         is RealtimeSpeechRecognition.RecognitionResult.Error -> {
