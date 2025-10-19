@@ -17,6 +17,7 @@ import com.secretari.app.service.UniversalAudioRecorder
 import com.secretari.app.service.RealtimeSpeechRecognition
 import com.secretari.app.util.SettingsManager
 import com.secretari.app.util.UserManager
+import com.secretari.app.data.model.AppConstants
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -170,7 +171,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     // Create record with current transcript and send to AI for summary
                     val currentTranscript = _transcript.value
                     if (currentTranscript.isNotEmpty()) {
-                        sendToAI(currentTranscript)
+                        val currentSettings = settings.firstOrNull() ?: AppConstants.DEFAULT_SETTINGS
+                        val record = AudioRecord(
+                            transcript = currentTranscript,
+                            locale = currentSettings.selectedLocale
+                        )
+                        sendToAI(currentTranscript, record)
                     } else {
                         Log.w("MainViewModel", "No transcript available after timeout")
                         _errorMessage.value = "No speech was recognized during the recording session"
@@ -235,16 +241,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val currentTranscript = _transcript.value
         
         Log.d("MainViewModel", "Current transcript length: ${currentTranscript.length}")
-        if (currentTranscript.isNotEmpty()) {
-            Log.d("MainViewModel", "Sending transcript to AI: '${currentTranscript.take(50)}...'")
-            sendToAI(currentTranscript)
-        } else {
-            Log.w("MainViewModel", "No transcript available when stopping recording")
-            _errorMessage.value = "No speech was recognized during the recording session"
+        
+        // Create AudioRecord immediately, regardless of transcript content
+        viewModelScope.launch {
+            val currentSettings = settings.firstOrNull() ?: AppConstants.DEFAULT_SETTINGS
+            val record = AudioRecord(
+                transcript = currentTranscript,
+                locale = currentSettings.selectedLocale
+            )
+            
+            // Save the record immediately to database
+            repository.insert(record)
+            Log.d("MainViewModel", "AudioRecord saved immediately with transcript: '$currentTranscript'")
+            
+            if (currentTranscript.isNotEmpty()) {
+                Log.d("MainViewModel", "Sending transcript to AI: '${currentTranscript.take(50)}...'")
+                sendToAI(currentTranscript, record)
+            } else {
+                Log.w("MainViewModel", "No transcript available when stopping recording")
+                _errorMessage.value = "No speech was recognized during the recording session"
+                // Still set the current record even without transcript
+                _currentRecord.value = record
+            }
         }
     }
     
-    fun sendToAI(rawText: String, prompt: String = "") {
+    fun sendToAI(rawText: String, record: AudioRecord, prompt: String = "") {
         viewModelScope.launch {
             val currentSettings = settings.firstOrNull() ?: return@launch
             var token = userManager.userToken
@@ -287,15 +309,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             // Use only the answer from result message as the final summary
                             val finalSummary = message.answer
                             
-                            val record = AudioRecord(
-                                transcript = rawText,
-                                locale = currentSettings.selectedLocale
-                            )
+                            // Update the existing record with AI result
                             record.resultFromAI(AudioRecord.TaskType.SUMMARIZE, finalSummary, currentSettings)
                             
                             viewModelScope.launch {
-                                repository.insert(record)
-                                Log.d("MainViewModel", "AudioRecord saved to database with summary: $finalSummary")
+                                repository.update(record)
+                                Log.d("MainViewModel", "AudioRecord updated with AI summary: $finalSummary")
                             }
                             
                             // Clear streaming and show final result

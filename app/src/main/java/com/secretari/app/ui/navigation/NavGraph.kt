@@ -104,7 +104,12 @@ fun NavGraph(
                     viewModel.stopRecording()
                 },
                 onSendToAI = { text ->
-                    viewModel.sendToAI(text)
+                    // Create a record for manual AI processing
+                    val record = com.secretari.app.data.model.AudioRecord(
+                        transcript = text,
+                        locale = settings.selectedLocale
+                    )
+                    viewModel.sendToAI(text, record)
                 },
                 onBack = {
                     navController.popBackStack()
