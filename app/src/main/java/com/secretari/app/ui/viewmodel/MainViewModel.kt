@@ -65,6 +65,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isListening = MutableStateFlow(false)
     val isListening: StateFlow<Boolean> = _isListening.asStateFlow()
     
+    private val _currentRecord = MutableStateFlow<AudioRecord?>(null)
+    val currentRecord: StateFlow<AudioRecord?> = _currentRecord.asStateFlow()
+    
     init {
         checkLoginStatus()
     }
@@ -92,7 +95,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 _isRecording.value = true
-                _transcript.value = ""
                 _isListening.value = false
                 _audioFilePath.value = null
                 _audioLevel.value = -60f
@@ -130,11 +132,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.PartialText -> {
                                     Log.d("MainViewModel", "Partial text: ${result.text}")
-                                    _transcript.value = result.text
+                                    _transcript.value += result.text
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.FinalText -> {
                                     Log.d("MainViewModel", "Final text: ${result.text}")
-                                    _transcript.value = result.text
+                                    _transcript.value += result.text
                                     _isListening.value = false
                                 }
                                         is RealtimeSpeechRecognition.RecognitionResult.Error -> {
@@ -229,8 +231,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             Log.d("MainViewModel", "Audio file saved: $filePath")
         }
         
-        // Create AudioRecord with current transcript and send to AI
+        // Get current transcript without clearing it
         val currentTranscript = _transcript.value
+        
         Log.d("MainViewModel", "Current transcript length: ${currentTranscript.length}")
         if (currentTranscript.isNotEmpty()) {
             Log.d("MainViewModel", "Sending transcript to AI: '${currentTranscript.take(50)}...'")
@@ -281,8 +284,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         
                         // Only create and save AudioRecord when eof=true (final chunk)
                         if (message.eof) {
-                            // Use the accumulated streaming text as the final summary
-                            val finalSummary = _streamedText.value
+                            // Use only the answer from result message as the final summary
+                            val finalSummary = message.answer
+                            
                             val record = AudioRecord(
                                 transcript = rawText,
                                 locale = currentSettings.selectedLocale
@@ -294,8 +298,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 Log.d("MainViewModel", "AudioRecord saved to database with summary: $finalSummary")
                             }
                             
+                            // Clear streaming and show final result
                             _isStreaming.value = false
-                            _shouldNavigateBack.value = true
+                            _streamedText.value = ""
+                            
+                            // Set the final record to show the result
+                            _currentRecord.value = record
+                            
                             webSocketClient.disconnect()
                         } else {
                             // For non-final chunks, accumulate the answer (this shouldn't happen in current backend)

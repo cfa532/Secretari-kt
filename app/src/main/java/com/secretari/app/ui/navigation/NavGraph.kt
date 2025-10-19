@@ -52,6 +52,7 @@ fun NavGraph(
     val audioFilePath by viewModel.audioFilePath.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val shouldNavigateBack by viewModel.shouldNavigateBack.collectAsState()
+    val currentRecord by viewModel.currentRecord.collectAsState()
     
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
@@ -97,7 +98,7 @@ fun NavGraph(
                 isStreaming = isStreaming,
                 transcript = transcript,
                 streamedText = streamedText,
-                record = null, // Would need to pass selected record
+                record = currentRecord, // Pass the current record from AI processing
                 settings = settings,
                 onStopRecording = {
                     viewModel.stopRecording()

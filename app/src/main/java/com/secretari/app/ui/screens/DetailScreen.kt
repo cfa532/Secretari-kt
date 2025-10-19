@@ -128,20 +128,12 @@ fun DetailScreen(
                         settings = settings, 
                         onLocaleChange = onLocaleChange,
                         isListening = isListening,
+                        isStreaming = isStreaming,
                         audioLevel = audioLevel,
                         audioFilePath = audioFilePath,
                         errorMessage = errorMessage,
                         onStopRecording = onStopRecording
                     )
-                    
-                    // Show preview when there's transcript content
-                    if (transcript.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PreviewView(
-                            transcript = transcript,
-                            settings = settings
-                        )
-                    }
                 }
                 isStreaming -> {
                     StreamingView(streamedText = streamedText)
@@ -231,6 +223,7 @@ fun RecordingView(
     settings: Settings,
     onLocaleChange: (RecognizerLocale) -> Unit,
     isListening: Boolean = false,
+    isStreaming: Boolean = false,
     audioLevel: Float = -60f,
     audioFilePath: String? = null,
     errorMessage: String? = null,
@@ -248,6 +241,7 @@ fun RecordingView(
                 Text(
                     when {
                         errorMessage != null -> "Error: $errorMessage"
+                        isStreaming -> "Receiving..."
                         isListening -> "Listening..."
                         audioFilePath != null -> "Recording audio..."
                         else -> "Starting..."
@@ -439,89 +433,4 @@ fun PulsingDot() {
     }
 }
 
-@Composable
-fun PreviewView(
-    transcript: String,
-    settings: Settings
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
-            ) {
-                Icon(
-                    Icons.Default.Preview,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Preview",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-            
-            Text(
-                text = "This is what your transcript will look like:",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            // Show preview based on prompt type
-            when (settings.promptType) {
-                com.secretari.app.data.model.PromptType.SUMMARY -> {
-                    Text(
-                        text = "📝 Summary will be generated from this transcript",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-                com.secretari.app.data.model.PromptType.CHECKLIST -> {
-                    Text(
-                        text = "✅ Key points will be extracted as a checklist",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-                com.secretari.app.data.model.PromptType.SUBSCRIPTION -> {
-                    Text(
-                        text = "📄 Clean transcription with formatting",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-            }
-            
-            // Show a preview of the transcript
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Text(
-                    text = transcript.take(200) + if (transcript.length > 200) "..." else "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-        }
-    }
-}
 
