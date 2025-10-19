@@ -132,11 +132,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.PartialText -> {
                                     Log.d("MainViewModel", "Partial text: ${result.text}")
-                                    _transcript.value += result.text
+                                    _transcript.value = result.text
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.FinalText -> {
                                     Log.d("MainViewModel", "Final text: ${result.text}")
-                                    _transcript.value += result.text
+                                    _transcript.value = result.text
                                     _isListening.value = false
                                 }
                                         is RealtimeSpeechRecognition.RecognitionResult.Error -> {
