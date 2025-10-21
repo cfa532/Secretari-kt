@@ -114,8 +114,8 @@ fun NavGraph(
                     viewModel.stopRecording()
                 },
                 onSendToAI = { text ->
-                    // Create a record for manual AI processing (regeneration uses empty prompt to use default prompt)
-                    val record = AudioRecord(
+                    // Use existing record if available, otherwise create new one
+                    val record = currentRecord ?: AudioRecord(
                         transcript = text,
                         locale = settings.selectedLocale
                     )

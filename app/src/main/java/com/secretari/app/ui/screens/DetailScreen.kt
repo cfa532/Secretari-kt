@@ -126,6 +126,21 @@ fun DetailScreen(
         }
     }
     
+    // Auto-generate summary if record exists but has no summary
+    LaunchedEffect(record, settings.promptType) {
+        record?.let { currentRecord ->
+            val hasSummary = when (settings.promptType) {
+                PromptType.CHECKLIST -> currentRecord.memo.isNotEmpty()
+                else -> currentRecord.summary[currentRecord.locale]?.isNotEmpty() == true
+            }
+            
+            // If record has transcript but no summary, auto-call AI
+            if (currentRecord.transcript.isNotEmpty() && !hasSummary && !isRecording && !isStreaming) {
+                onSendToAI(currentRecord.transcript)
+            }
+        }
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
