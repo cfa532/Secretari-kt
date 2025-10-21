@@ -1,9 +1,10 @@
 package com.secretari.app.data.model
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable
+@InternalSerializationApi @Serializable
 data class User(
     @SerialName("id")
     val id: String,
@@ -32,13 +33,6 @@ data class User(
     @SerialName("email")
     val email: String? = null
 ) {
-    val initials: String
-        get() {
-            val firstName = givenName ?: "John"
-            val lastName = familyName ?: "Smith"
-            return "${firstName.firstOrNull()?.uppercaseChar() ?: ""}${lastName.firstOrNull()?.uppercaseChar() ?: ""}"
-        }
-    
     val displayUsername: String?
         get() = if (username.length > 20) null else username
 }

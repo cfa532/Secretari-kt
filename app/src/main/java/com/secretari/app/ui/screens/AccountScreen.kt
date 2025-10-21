@@ -35,8 +35,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.secretari.app.data.model.User
 import com.secretari.app.util.UserManager
+import kotlinx.serialization.InternalSerializationApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun AccountScreen(
     user: User?,
@@ -83,6 +84,7 @@ fun AccountScreen(
     }
 }
 
+@OptIn(InternalSerializationApi::class)
 @Composable
 fun AccountDetails(user: User?) {
     LazyColumn(
@@ -113,7 +115,7 @@ fun AccountDetails(user: User?) {
                         InfoRow("Name", "${it.givenName ?: ""} ${it.familyName ?: ""}".trim())
                     }
                     user?.let {
-                        InfoRow("Balance", String.format("$%.2f", it.dollarBalance))
+                        InfoRow("Balance", String.format(java.util.Locale.US, "$%.2f", it.dollarBalance))
                     }
                     user?.let {
                         InfoRow("Tokens", it.tokenCount.toString())
@@ -198,6 +200,7 @@ fun LoginForm(onLogin: (String, String) -> Unit) {
     }
 }
 
+@OptIn(InternalSerializationApi::class)
 @Composable
 fun RegisterForm(onRegister: (User) -> Unit) {
     var username by remember { mutableStateOf("") }

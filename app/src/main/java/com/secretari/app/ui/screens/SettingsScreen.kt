@@ -38,8 +38,9 @@ import androidx.compose.ui.unit.dp
 import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.RecognizerLocale
 import com.secretari.app.data.model.Settings
+import kotlinx.serialization.InternalSerializationApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun SettingsScreen(
     settings: Settings,
@@ -245,7 +246,7 @@ fun SettingsScreen(
             title = { Text("Select Prompt Type") },
             text = {
                 Column {
-                    PromptType.values().forEach { type ->
+                    PromptType.entries.forEach { type ->
                         TextButton(
                             onClick = {
                                 currentSettings = currentSettings.copy(promptType = type)

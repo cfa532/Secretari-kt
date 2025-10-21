@@ -1,5 +1,6 @@
 package com.secretari.app.data.model
 
+import kotlinx.serialization.InternalSerializationApi
 import java.util.Locale
 
 object AppConstants {
@@ -83,6 +84,7 @@ object AppConstants {
         )
     )
     
+    @OptIn(InternalSerializationApi::class)
     val DEFAULT_SETTINGS = Settings(
         prompt = defaultPrompts,
         serverURL = "bunny.leither.uk/secretari",

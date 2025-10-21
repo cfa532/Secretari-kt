@@ -3,6 +3,7 @@ package com.secretari.app.data.database
 import androidx.room.TypeConverter
 import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.RecognizerLocale
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -45,11 +46,13 @@ class Converters {
         }
     }
     
+    @OptIn(InternalSerializationApi::class)
     @TypeConverter
     fun fromMemoList(value: List<AudioRecord.MemoJsonData>): String {
         return Json.encodeToString(value)
     }
     
+    @OptIn(InternalSerializationApi::class)
     @TypeConverter
     fun toMemoList(value: String): List<AudioRecord.MemoJsonData> {
         if (value.isEmpty()) return emptyList()

@@ -1,8 +1,9 @@
 package com.secretari.app.data.model
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
-@Serializable
+@InternalSerializationApi @Serializable
 data class Settings(
     val prompt: Map<PromptType, Map<RecognizerLocale, String>> = emptyMap(),
     val serverURL: String = "bunny.leither.uk/secretari",
@@ -19,7 +20,7 @@ enum class PromptType(val value: String) {
 
     companion object {
         fun allowedCases(lowBalance: Boolean): List<PromptType> {
-            return if (lowBalance) listOf(SUMMARY) else values().toList()
+            return if (lowBalance) listOf(SUMMARY) else PromptType.entries
         }
     }
 }

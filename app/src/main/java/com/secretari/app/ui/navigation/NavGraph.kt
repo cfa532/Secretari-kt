@@ -29,6 +29,7 @@ import com.secretari.app.ui.screens.MainScreen
 import com.secretari.app.ui.screens.SettingsScreen
 import com.secretari.app.ui.screens.TranslationScreen
 import com.secretari.app.ui.viewmodel.MainViewModel
+import kotlinx.serialization.InternalSerializationApi
 
 sealed class Screen(val route: String) {
     object Main : Screen("main")
@@ -40,6 +41,7 @@ sealed class Screen(val route: String) {
     object Help : Screen("help")
 }
 
+@OptIn(InternalSerializationApi::class)
 @Composable
 fun NavGraph(
     navController: NavHostController = rememberNavController(),

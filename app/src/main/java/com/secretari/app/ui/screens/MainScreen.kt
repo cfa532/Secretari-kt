@@ -65,11 +65,12 @@ import com.secretari.app.data.model.RecognizerLocale
 import com.secretari.app.data.model.Settings
 import com.secretari.app.ui.viewmodel.MainViewModel
 import com.secretari.app.util.UserManager
+import kotlinx.serialization.InternalSerializationApi
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun MainScreen(
     records: List<AudioRecord>,
@@ -318,7 +319,7 @@ fun MainScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun RecordListItem(
     record: AudioRecord,
@@ -451,6 +452,7 @@ fun MainScreenPreview() {
     }
 }
 
+@OptIn(InternalSerializationApi::class)
 @Preview(showBackground = true)
 @Composable
 fun MainScreenWithRecordsPreview() {

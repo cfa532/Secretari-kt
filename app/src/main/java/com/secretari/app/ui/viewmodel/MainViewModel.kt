@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.InternalSerializationApi
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -39,7 +40,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val webSocketClient = WebSocketClient()
     
     val allRecords: Flow<List<AudioRecord>> = repository.allRecords
+    @OptIn(InternalSerializationApi::class)
     val settings: Flow<Settings> = settingsManager.settingsFlow
+    @OptIn(InternalSerializationApi::class)
     val currentUser: Flow<User?> = userManager.currentUserFlow
     
     private val _isRecording = MutableStateFlow(false)
@@ -79,6 +82,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         checkLoginStatus()
     }
     
+    @OptIn(InternalSerializationApi::class)
     private fun checkLoginStatus() {
         viewModelScope.launch {
             val token = userManager.userToken
@@ -96,6 +100,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    @OptIn(InternalSerializationApi::class)
     fun startRecording(locale: String) {
         if (_isRecording.value) return
 
@@ -233,6 +238,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    @OptIn(InternalSerializationApi::class)
     fun stopRecording() {
         Log.d("MainViewModel", "Stopping recording...")
         _isRecording.value = false
@@ -273,6 +279,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    @OptIn(InternalSerializationApi::class)
     fun sendToAI(rawText: String, record: AudioRecord, prompt: String = "") {
         viewModelScope.launch {
             val currentSettings = settings.firstOrNull() ?: return@launch
@@ -389,6 +396,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    @OptIn(InternalSerializationApi::class)
     fun updateSettings(settings: Settings) {
         viewModelScope.launch {
             settingsManager.updateSettings(settings)
@@ -405,6 +413,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    @OptIn(InternalSerializationApi::class)
     fun register(user: User, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val success = userManager.register(user)
@@ -434,6 +443,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _shouldNavigateBack.value = false
     }
     
+    @OptIn(InternalSerializationApi::class)
     fun shareRecord(record: AudioRecord?) {
         if (record == null) return
         
@@ -463,6 +473,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    @OptIn(InternalSerializationApi::class)
     fun translateRecord(record: AudioRecord?, targetLocale: com.secretari.app.data.model.RecognizerLocale) {
         if (record == null) return
         

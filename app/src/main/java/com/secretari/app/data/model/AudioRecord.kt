@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.secretari.app.data.database.Converters
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -12,7 +13,7 @@ import java.util.Date
 
 @Entity(tableName = "audio_records")
 @TypeConverters(Converters::class)
-data class AudioRecord(
+data class AudioRecord @OptIn(InternalSerializationApi::class) constructor(
     @PrimaryKey
     val recordDate: Long = Date().time,
     
@@ -26,7 +27,7 @@ data class AudioRecord(
     
     var memo: List<MemoJsonData> = emptyList()
 ) {
-    @kotlinx.serialization.Serializable
+    @InternalSerializationApi @kotlinx.serialization.Serializable
     data class MemoJsonData(
         val id: Int,
         val title: Map<RecognizerLocale, String>,
@@ -37,6 +38,7 @@ data class AudioRecord(
         TRANSLATE, SUMMARIZE
     }
     
+    @OptIn(InternalSerializationApi::class)
     fun resultFromAI(_taskType: TaskType, summaryText: String, settings: Settings) {
         when {
             settings.promptType == PromptType.SUMMARY || settings.promptType == PromptType.SUBSCRIPTION -> {
@@ -52,7 +54,8 @@ data class AudioRecord(
                         val newMemoItems = mutableListOf<MemoJsonData>()
                         json.forEachIndexed { index, element ->
                             if (element is JsonObject) {
-                                val id = element["id"]?.jsonPrimitive?.content?.toIntOrNull() ?: index + 1
+                                val id = element["id"]?.jsonPrimitive?.content?.toIntOrNull()
+                                    ?: (index + 1)
                                 val title = element["title"]?.jsonPrimitive?.content ?: "Unknown item"
                                 val isChecked = element["isChecked"]?.jsonPrimitive?.content?.toBoolean() ?: false
                                 
@@ -85,6 +88,7 @@ data class AudioRecord(
     }
     
     companion object {
+        @OptIn(InternalSerializationApi::class)
         fun sampleData(): List<AudioRecord> {
             return listOf(
                 AudioRecord(

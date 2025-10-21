@@ -76,11 +76,12 @@ import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.RecognizerLocale
 import com.secretari.app.data.model.Settings
 import com.secretari.app.ui.viewmodel.MainViewModel
+import kotlinx.serialization.InternalSerializationApi
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
 fun DetailScreen(
     isRecording: Boolean,
@@ -315,6 +316,7 @@ fun DetailScreen(
     }
 }
 
+@OptIn(InternalSerializationApi::class)
 @Composable
 fun RecordingView(
     transcript: String,
@@ -475,6 +477,7 @@ fun StreamingView(streamedText: String) {
     }
 }
 
+@OptIn(InternalSerializationApi::class)
 @Composable
 fun ChecklistView(
     record: AudioRecord,
@@ -616,6 +619,7 @@ fun ChecklistView(
     }
 }
 
+@OptIn(InternalSerializationApi::class)
 @Composable
 fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_SETTINGS, onEditSummary: (String) -> Unit = {}) {
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }

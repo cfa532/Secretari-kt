@@ -13,7 +13,7 @@ enum class RecognizerLocale(val code: String, val displayName: String) {
 
     companion object {
         fun fromCode(code: String): RecognizerLocale {
-            return values().find { it.code == code } ?: ENGLISH
+            return RecognizerLocale.entries.find { it.code == code } ?: ENGLISH
         }
 
         fun getAvailable(): List<RecognizerLocale> {

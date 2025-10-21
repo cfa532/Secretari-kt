@@ -18,10 +18,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.InternalSerializationApi
 import java.util.UUID
 
 private val Context.userDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
 
+@OptIn(InternalSerializationApi::class)
 class UserManager(private val context: Context) {
     
     private val userKey = stringPreferencesKey("current_user")
