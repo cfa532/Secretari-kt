@@ -92,7 +92,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun startRecording(locale: String) {
         if (_isRecording.value) return
-        
+
         viewModelScope.launch {
             try {
                 _isRecording.value = true
@@ -100,6 +100,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _audioFilePath.value = null
                 _audioLevel.value = -60f
                 _errorMessage.value = null
+                _currentRecord.value = null // Clear current record when starting new recording
                 
                 Log.d("MainViewModel", "Starting recording with locale: $locale")
                 Log.d("MainViewModel", "State: isRecording=${_isRecording.value}, isListening=${_isListening.value}, audioFilePath=${_audioFilePath.value}")
@@ -369,6 +370,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repository.delete(record)
         }
+    }
+    
+    fun selectRecord(record: AudioRecord) {
+        _currentRecord.value = record
+        // Clear recording states when viewing an existing record
+        _isRecording.value = false
+        _isStreaming.value = false
+        _isListening.value = false
+        _transcript.value = ""
+        _streamedText.value = ""
+        _errorMessage.value = null
     }
     
     fun updateSettings(settings: Settings) {

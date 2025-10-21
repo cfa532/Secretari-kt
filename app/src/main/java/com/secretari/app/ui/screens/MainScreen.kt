@@ -1,15 +1,16 @@
 package com.secretari.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.draw.shadow
 import androidx.compose.material3.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -21,6 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.RecognizerLocale
 import com.secretari.app.util.UserManager
@@ -281,35 +286,80 @@ fun RecordListItem(
     onDelete: () -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
+    var offsetX by remember { mutableStateOf(0f) }
+    val density = LocalDensity.current
+    val deleteButtonWidth = with(density) { 60.dp.toPx() }
     
-    Card(
-        onClick = onClick,
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        Row(
+        // Delete button background
+        if (offsetX < 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(60.dp)
+                    .height(IntrinsicSize.Min),
+                contentAlignment = Alignment.Center
+            ) {
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = Color.Red,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+        
+        // Main card
+        Card(
+            onClick = onClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .offset(x = with(density) { offsetX.toDp() })
+                .draggable(
+                    state = rememberDraggableState { delta ->
+                        val newOffset = offsetX + delta
+                        offsetX = newOffset.coerceAtLeast(-deleteButtonWidth).coerceAtMost(0f)
+                    },
+                    orientation = androidx.compose.foundation.gestures.Orientation.Horizontal,
+                    onDragStopped = {
+                        // Snap to either fully open or fully closed
+                        if (offsetX < -deleteButtonWidth / 2) {
+                            offsetX = -deleteButtonWidth
+                        } else {
+                            offsetX = 0f
+                        }
+                    }
+                )
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = dateFormat.format(Date(record.recordDate)),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = record.transcript.take(100) + if (record.transcript.length > 100) "..." else "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = dateFormat.format(Date(record.recordDate)),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = record.transcript.take(100) + if (record.transcript.length > 100) "..." else "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2
+                    )
+                }
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.draw.shadow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -295,11 +296,11 @@ fun RecordingView(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     
-                    LazyColumn(
-                        modifier = Modifier.heightIn(max = 300.dp)
-                    ) {
-                        items(transcript.split("\n")) { line ->
-                            if (line.isNotEmpty()) {
+                    SelectionContainer {
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 300.dp)
+                        ) {
+                            items(transcript.split("\n").filter { it.isNotEmpty() }) { line ->
                                 Text(
                                     text = line,
                                     style = MaterialTheme.typography.bodyLarge,
@@ -349,23 +350,25 @@ fun StreamingView(streamedText: String) {
                     modifier = Modifier.heightIn(max = 300.dp)
                 ) {
                     item {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (streamedText.isNotEmpty()) streamedText else "Waiting for AI response...",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            
-                            // Show typing cursor when streaming
-                            if (streamedText.isNotEmpty()) {
+                        SelectionContainer {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Text(
-                                    text = "|",
+                                    text = if (streamedText.isNotEmpty()) streamedText else "Waiting for AI response...",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(start = 2.dp)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
+                                
+                                // Show typing cursor when streaming
+                                if (streamedText.isNotEmpty()) {
+                                    Text(
+                                        text = "|",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(start = 2.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -389,16 +392,46 @@ fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_S
             Spacer(modifier = Modifier.height(16.dp))
         }
         
+        // Show transcript first
         item {
-            val summaryText = record.summary[record.locale] ?: "No summary. Try to regenerate summary"
-            OutlinedTextField(
-                value = summaryText,
-                onValueChange = { },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                minLines = 10,
-                maxLines = Int.MAX_VALUE
+            Text(
+                text = "Transcript:",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
             )
+            SelectionContainer {
+                OutlinedTextField(
+                    value = record.transcript,
+                    onValueChange = { },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    minLines = 3,
+                    maxLines = Int.MAX_VALUE
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        
+        // Show summary
+        item {
+            Text(
+                text = "Summary:",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            val summaryText = record.summary[record.locale] ?: "No summary available. Try to regenerate summary."
+            SelectionContainer {
+                OutlinedTextField(
+                    value = summaryText,
+                    onValueChange = { },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    minLines = 10,
+                    maxLines = Int.MAX_VALUE
+                )
+            }
         }
     }
 }

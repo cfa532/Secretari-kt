@@ -59,7 +59,8 @@ fun NavGraph(
             MainScreen(
                 records = records,
                 loginStatus = loginStatus,
-                onRecordClick = { _ ->
+                onRecordClick = { record ->
+                    viewModel.selectRecord(record)
                     navController.navigate(Screen.Detail.route)
                 },
                 onDeleteRecord = { record ->
