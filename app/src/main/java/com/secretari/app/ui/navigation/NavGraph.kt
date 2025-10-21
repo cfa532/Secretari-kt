@@ -28,6 +28,7 @@ import com.secretari.app.ui.viewmodel.MainViewModel
 sealed class Screen(val route: String) {
     object Main : Screen("main")
     object Detail : Screen("detail")
+    object Translation : Screen("translation")
     object Settings : Screen("settings")
     object Account : Screen("account")
     object Store : Screen("store")
@@ -105,24 +106,31 @@ fun NavGraph(
                     viewModel.stopRecording()
                 },
                 onSendToAI = { text ->
-                    // Create a record for manual AI processing
+                    // Create a record for manual AI processing (regeneration uses empty prompt to use default prompt)
                     val record = com.secretari.app.data.model.AudioRecord(
                         transcript = text,
                         locale = settings.selectedLocale
                     )
-                    viewModel.sendToAI(text, record)
+                    viewModel.sendToAI(text, record, "") // Empty prompt = use default prompt from settings
                 },
                 onBack = {
                     navController.popBackStack()
                 },
                 onShare = {
-                    // Implement share functionality
+                    viewModel.shareRecord(currentRecord)
                 },
                 onTranslate = {
-                    // Implement translate functionality
+                    navController.navigate(Screen.Translation.route)
                 },
                 onRegenerate = {
                     // Handled in DetailScreen
+                },
+                onEditTranscript = { editedTranscript ->
+                    currentRecord?.let { record ->
+                        val updatedRecord = record.copy(transcript = editedTranscript)
+                        viewModel.updateRecord(updatedRecord)
+                        viewModel.selectRecord(updatedRecord)
+                    }
                 },
                 onLocaleChange = { locale ->
                     viewModel.updateSettings(settings.copy(selectedLocale = locale))
@@ -133,6 +141,32 @@ fun NavGraph(
                 audioLevel = audioLevel,
                 audioFilePath = audioFilePath,
                 errorMessage = errorMessage
+            )
+        }
+        
+        composable(Screen.Translation.route) {
+            // Handle navigation back to DetailScreen when translation is complete
+            LaunchedEffect(isStreaming) {
+                if (!isStreaming && streamedText.isEmpty() && currentRecord != null) {
+                    // Translation completed, navigate back to DetailScreen
+                    navController.popBackStack()
+                }
+            }
+            
+            TranslationScreen(
+                record = currentRecord,
+                isStreaming = isStreaming,
+                streamedText = streamedText,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onTranslate = { targetLocale ->
+                    viewModel.translateRecord(currentRecord, targetLocale)
+                    // Stay on TranslationScreen to show streaming
+                },
+                onShare = {
+                    viewModel.shareRecord(currentRecord)
+                }
             )
         }
         

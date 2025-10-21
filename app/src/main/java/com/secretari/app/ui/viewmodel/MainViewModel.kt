@@ -1,6 +1,7 @@
 package com.secretari.app.ui.viewmodel
 
 import android.app.Application
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
@@ -243,27 +244,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         
         Log.d("MainViewModel", "Current transcript length: ${currentTranscript.length}")
         
-        // Create AudioRecord immediately, regardless of transcript content
-        viewModelScope.launch {
-            val currentSettings = settings.firstOrNull() ?: AppConstants.DEFAULT_SETTINGS
-            val record = AudioRecord(
-                transcript = currentTranscript,
-                locale = currentSettings.selectedLocale
-            )
-            
-            // Save the record immediately to database
-            repository.insert(record)
-            Log.d("MainViewModel", "AudioRecord saved immediately with transcript: '$currentTranscript'")
-            
-            if (currentTranscript.isNotEmpty()) {
+        // Only create AudioRecord if there's a transcript (following iOS logic)
+        if (currentTranscript.isNotEmpty()) {
+            viewModelScope.launch {
+                val currentSettings = settings.firstOrNull() ?: AppConstants.DEFAULT_SETTINGS
+                val record = AudioRecord(
+                    transcript = currentTranscript,
+                    locale = currentSettings.selectedLocale
+                )
+                
+                // Save the record immediately to database
+                repository.insert(record)
+                Log.d("MainViewModel", "AudioRecord saved immediately with transcript: '$currentTranscript'")
+                
+                // Generate summary in the same language as the transcript
                 Log.d("MainViewModel", "Sending transcript to AI: '${currentTranscript.take(50)}...'")
-                sendToAI(currentTranscript, record)
-            } else {
-                Log.w("MainViewModel", "No transcript available when stopping recording")
-                _errorMessage.value = "No speech was recognized during the recording session"
-                // Still set the current record even without transcript
-                _currentRecord.value = record
+                sendToAI(currentTranscript, record, "") // Empty prompt = use default prompt for transcript language
             }
+        } else {
+            Log.w("MainViewModel", "No transcript available when stopping recording")
+            _errorMessage.value = "No speech was recognized during the recording session"
+            // Don't create AudioRecord if there's no transcript
         }
     }
     
@@ -374,13 +375,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun selectRecord(record: AudioRecord) {
         _currentRecord.value = record
-        // Clear recording states when viewing an existing record
-        _isRecording.value = false
-        _isStreaming.value = false
-        _isListening.value = false
-        _transcript.value = ""
-        _streamedText.value = ""
-        _errorMessage.value = null
+        // Clear recording states when viewing an existing record (only if we're not currently recording)
+        if (!_isRecording.value) {
+            _isStreaming.value = false
+            _isListening.value = false
+            _streamedText.value = ""
+            _errorMessage.value = null
+        }
     }
     
     fun updateSettings(settings: Settings) {
@@ -426,6 +427,71 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun resetNavigationFlag() {
         _shouldNavigateBack.value = false
+    }
+    
+    fun shareRecord(record: AudioRecord?) {
+        if (record == null) return
+        
+        viewModelScope.launch {
+            val settings = settingsManager.getSettings()
+            val dateFormat = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault())
+            val dateString = dateFormat.format(java.util.Date(record.recordDate))
+            
+            var textToShare = "$dateString:\n"
+            
+            // Get the summary text for the current locale
+            val summaryText = record.summary[record.locale] ?: "No summary available"
+            textToShare += summaryText
+            
+            // Create share intent
+            val shareIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, textToShare)
+            }
+            
+            // Start the share activity
+            val context = getApplication<Application>()
+            val chooserIntent = Intent.createChooser(shareIntent, "Share Summary")
+            chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooserIntent)
+        }
+    }
+    
+    fun translateRecord(record: AudioRecord?, targetLocale: com.secretari.app.data.model.RecognizerLocale) {
+        if (record == null) return
+        
+        viewModelScope.launch {
+            val currentSettings = settingsManager.getSettings()
+            val sourceText = record.summary[record.locale] ?: record.transcript
+            
+            if (sourceText.isEmpty()) {
+                _errorMessage.value = "No content to translate"
+                return@launch
+            }
+            
+            // Create translation prompt based on target locale
+            val translationPrompt = when (targetLocale) {
+                com.secretari.app.data.model.RecognizerLocale.ENGLISH -> "Translate the following text into English. Export with plain text."
+                com.secretari.app.data.model.RecognizerLocale.CHINESE -> "將下面的文字翻譯成繁體中文。以純文字導出。"
+                com.secretari.app.data.model.RecognizerLocale.INDONESIAN -> "Terjemahkan teks berikut ke dalam bahasa Indonesia. Ekspor dengan teks biasa."
+                com.secretari.app.data.model.RecognizerLocale.JAPANESE -> "次のテキストを日本語に翻訳し、プレーンテキストでエクスポートします。"
+                com.secretari.app.data.model.RecognizerLocale.VIETNAMESE -> "Dịch đoạn văn sau sang tiếng Việt. Xuất với văn bản thuần túy."
+                com.secretari.app.data.model.RecognizerLocale.FILIPINO -> "Isalin sa Filipino ang sumusunod na teksto. I-export gamit ang plain text."
+                com.secretari.app.data.model.RecognizerLocale.THAI -> "แปลข้อความต่อไปนี้เป็นภาษาไทย ส่งออกด้วยข้อความธรรมดา"
+                com.secretari.app.data.model.RecognizerLocale.SPANISH -> "Traduce el siguiente texto al español. Exporta con texto plano."
+                com.secretari.app.data.model.RecognizerLocale.KOREAN -> "다음 텍스트를 한국어로 번역하세요. 일반 텍스트로 내보내세요."
+            }
+            
+            // Create a new record for translation
+            val translationRecord = AudioRecord(
+                transcript = sourceText,
+                locale = targetLocale
+            )
+            
+            // Send to AI for translation
+            sendToAI(sourceText, translationRecord, translationPrompt)
+        }
     }
     
     override fun onCleared() {

@@ -43,6 +43,7 @@ fun DetailScreen(
     onShare: () -> Unit,
     onTranslate: () -> Unit,
     onRegenerate: () -> Unit = {},
+    onEditTranscript: (String) -> Unit = {},
     onLocaleChange: (RecognizerLocale) -> Unit,
     isListening: Boolean = false,
     audioLevel: Float = -60f,
@@ -51,6 +52,7 @@ fun DetailScreen(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showRegenerateDialog by remember { mutableStateOf(false) }
+    var showEditTranscriptDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     
     LaunchedEffect(transcript) {
@@ -103,6 +105,14 @@ fun DetailScreen(
                                 onTranslate()
                             },
                             leadingIcon = { Icon(Icons.Default.Translate, null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Original Transcript") },
+                            onClick = {
+                                showMenu = false
+                                showEditTranscriptDialog = true
+                            },
+                            leadingIcon = { Icon(Icons.Default.Edit, null) }
                         )
                         DropdownMenuItem(
                             text = { Text("Regenerate") },
@@ -213,6 +223,17 @@ fun DetailScreen(
                 TextButton(onClick = { showRegenerateDialog = false }) {
                     Text("No")
                 }
+            }
+        )
+    }
+    
+    if (showEditTranscriptDialog) {
+        EditTranscriptDialog(
+            record = record,
+            onDismiss = { showEditTranscriptDialog = false },
+            onSave = { editedTranscript ->
+                showEditTranscriptDialog = false
+                onEditTranscript(editedTranscript)
             }
         )
     }
@@ -355,7 +376,7 @@ fun StreamingView(streamedText: String) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = if (streamedText.isNotEmpty()) streamedText else "Waiting for AI response...",
+                                    text = streamedText.ifEmpty { "Waiting for AI response..." },
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -434,6 +455,45 @@ fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_S
             }
         }
     }
+}
+
+@Composable
+fun EditTranscriptDialog(
+    record: AudioRecord?,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    val originalTranscript = record?.transcript ?: ""
+    var editedTranscript by remember { mutableStateOf(originalTranscript) }
+    val hasChanges = editedTranscript != originalTranscript
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        text = {
+            OutlinedTextField(
+                value = editedTranscript,
+                onValueChange = { editedTranscript = it },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 8,
+                maxLines = 15,
+                label = { Text("Original Transcript") },
+                placeholder = { Text("Enter the corrected transcript...") }
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(editedTranscript) },
+                enabled = hasChanges && editedTranscript.isNotEmpty()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
