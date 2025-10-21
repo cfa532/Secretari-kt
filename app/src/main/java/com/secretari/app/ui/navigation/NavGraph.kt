@@ -12,9 +12,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,7 +22,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.secretari.app.ui.screens.*
+import com.secretari.app.data.model.AudioRecord
+import com.secretari.app.ui.screens.AccountScreen
+import com.secretari.app.ui.screens.DetailScreen
+import com.secretari.app.ui.screens.MainScreen
+import com.secretari.app.ui.screens.SettingsScreen
+import com.secretari.app.ui.screens.TranslationScreen
 import com.secretari.app.ui.viewmodel.MainViewModel
 
 sealed class Screen(val route: String) {
@@ -60,6 +65,7 @@ fun NavGraph(
             MainScreen(
                 records = records,
                 loginStatus = loginStatus,
+                viewModel = viewModel,
                 onRecordClick = { record ->
                     viewModel.selectRecord(record)
                     navController.navigate(Screen.Detail.route)
@@ -101,13 +107,13 @@ fun NavGraph(
                 transcript = transcript,
                 streamedText = streamedText,
                 record = currentRecord, // Pass the current record from AI processing
-                settings = settings,
+                viewModel = viewModel,
                 onStopRecording = {
                     viewModel.stopRecording()
                 },
                 onSendToAI = { text ->
                     // Create a record for manual AI processing (regeneration uses empty prompt to use default prompt)
-                    val record = com.secretari.app.data.model.AudioRecord(
+                    val record = AudioRecord(
                         transcript = text,
                         locale = settings.selectedLocale
                     )
@@ -137,6 +143,57 @@ fun NavGraph(
                         val updatedSummary = record.summary.toMutableMap()
                         updatedSummary[record.locale] = editedSummary
                         val updatedRecord = record.copy(summary = updatedSummary)
+                        viewModel.updateRecord(updatedRecord)
+                        viewModel.selectRecord(updatedRecord)
+                    }
+                },
+                onToggleChecklistItem = { itemId ->
+                    currentRecord?.let { record ->
+                        val updatedMemo = record.memo.map { memoItem ->
+                            if (memoItem.id == itemId) {
+                                memoItem.copy(isChecked = !memoItem.isChecked)
+                            } else {
+                                memoItem
+                            }
+                        }
+                        val updatedRecord = record.copy(memo = updatedMemo)
+                        viewModel.updateRecord(updatedRecord)
+                        viewModel.selectRecord(updatedRecord)
+                    }
+                },
+                onEditChecklistItem = { itemId, newText ->
+                    currentRecord?.let { record ->
+                        val updatedMemo = record.memo.map { memoItem ->
+                            if (memoItem.id == itemId) {
+                                val updatedTitle = memoItem.title.toMutableMap()
+                                updatedTitle[record.locale] = newText
+                                memoItem.copy(title = updatedTitle)
+                            } else {
+                                memoItem
+                            }
+                        }
+                        val updatedRecord = record.copy(memo = updatedMemo)
+                        viewModel.updateRecord(updatedRecord)
+                        viewModel.selectRecord(updatedRecord)
+                    }
+                },
+                onAddChecklistItem = {
+                    currentRecord?.let { record ->
+                        val newId = (record.memo.maxOfOrNull { it.id } ?: 0) + 1
+                        val newItem = AudioRecord.MemoJsonData(
+                            id = newId,
+                            title = mapOf(record.locale to "New item"),
+                            isChecked = false
+                        )
+                        val updatedRecord = record.copy(memo = record.memo.toMutableList().apply { add(newItem) })
+                        viewModel.updateRecord(updatedRecord)
+                        viewModel.selectRecord(updatedRecord)
+                    }
+                },
+                onRemoveChecklistItem = { itemId ->
+                    currentRecord?.let { record ->
+                        val updatedMemo = record.memo.filter { it.id != itemId }
+                        val updatedRecord = record.copy(memo = updatedMemo)
                         viewModel.updateRecord(updatedRecord)
                         viewModel.selectRecord(updatedRecord)
                     }

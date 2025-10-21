@@ -4,6 +4,10 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.secretari.app.data.database.Converters
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.util.Date
 
 @Entity(tableName = "audio_records")
@@ -39,14 +43,35 @@ data class AudioRecord(
                 val currentSummary = summary[locale] ?: ""
                 summary = summary + (locale to "$currentSummary$summaryText\n")
             }
-            else -> {
-                // Memo/checklist type - parse JSON
+            settings.promptType == PromptType.CHECKLIST -> {
+                // Parse JSON for checklist format
                 try {
-                    val _jsonString = getAIJson(summaryText)
-                    // Parse JSON and update memo
-                    // This would need proper JSON parsing in real implementation
+                    val jsonString = getAIJson(summaryText)
+                    val json = Json.parseToJsonElement(jsonString)
+                    if (json is JsonArray) {
+                        val newMemoItems = mutableListOf<MemoJsonData>()
+                        json.forEachIndexed { index, element ->
+                            if (element is JsonObject) {
+                                val id = element["id"]?.jsonPrimitive?.content?.toIntOrNull() ?: index + 1
+                                val title = element["title"]?.jsonPrimitive?.content ?: "Unknown item"
+                                val isChecked = element["isChecked"]?.jsonPrimitive?.content?.toBoolean() ?: false
+                                
+                                newMemoItems.add(
+                                    MemoJsonData(
+                                        id = id,
+                                        title = mapOf(locale to title),
+                                        isChecked = isChecked
+                                    )
+                                )
+                            }
+                        }
+                        memo = newMemoItems
+                    }
                 } catch (e: Exception) {
-                    println("Error parsing JSON: ${e.message}")
+                    println("Error parsing checklist JSON: ${e.message}")
+                    // Fallback to summary format if JSON parsing fails
+                    val currentSummary = summary[locale] ?: ""
+                    summary = summary + (locale to "$currentSummary$summaryText\n")
                 }
             }
         }

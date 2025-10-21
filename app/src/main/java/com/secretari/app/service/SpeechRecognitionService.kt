@@ -10,7 +10,6 @@ import android.util.Log
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import java.util.Locale
 
 class SpeechRecognitionService(private val context: Context) {
     

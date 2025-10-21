@@ -1,42 +1,80 @@
 package com.secretari.app.ui.screens
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.draw.shadow
-import androidx.compose.material3.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.secretari.app.data.model.AudioRecord
+import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.RecognizerLocale
+import com.secretari.app.data.model.Settings
+import com.secretari.app.ui.viewmodel.MainViewModel
 import com.secretari.app.util.UserManager
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     records: List<AudioRecord>,
     loginStatus: UserManager.LoginStatus,
+    viewModel: MainViewModel = viewModel(),
     onRecordClick: (AudioRecord) -> Unit,
     onDeleteRecord: (AudioRecord) -> Unit,
     onStartRecording: () -> Unit,
@@ -46,6 +84,7 @@ fun MainScreen(
     onNavigateToHelp: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    val settings by viewModel.settings.collectAsState(initial = com.secretari.app.data.model.AppConstants.DEFAULT_SETTINGS)
     
     Scaffold(
         topBar = {
@@ -228,6 +267,7 @@ fun MainScreen(
                     items(records, key = { it.recordDate }) { record ->
                         RecordListItem(
                             record = record,
+                            settings = settings,
                             onClick = { onRecordClick(record) },
                             onDelete = { onDeleteRecord(record) }
                         )
@@ -282,6 +322,7 @@ fun MainScreen(
 @Composable
 fun RecordListItem(
     record: AudioRecord,
+    settings: Settings,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -354,10 +395,37 @@ fun RecordListItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    
+                    // Display content based on prompt type
+                    val displayText = when (settings.promptType) {
+                        PromptType.CHECKLIST -> {
+                            if (record.memo.isNotEmpty()) {
+                                // Concatenate checklist items into one paragraph
+                                record.memo.joinToString(" • ") { item ->
+                                    val title = item.title[record.locale] ?: "Unknown item"
+                                    "${if (item.isChecked) "✓" else "○"} $title"
+                                }
+                            } else {
+                                // Fallback to transcript if no checklist items
+                                record.transcript
+                            }
+                        }
+                        else -> {
+                            // For SUMMARY and SUBSCRIPTION, show summary if available, otherwise transcript
+                            val summaryText = record.summary[record.locale]
+                            if (!summaryText.isNullOrEmpty()) {
+                                summaryText
+                            } else {
+                                record.transcript
+                            }
+                        }
+                    }
+                    
                     Text(
-                        text = record.transcript.take(100) + if (record.transcript.length > 100) "..." else "",
+                        text = displayText.take(150) + if (displayText.length > 150) "..." else "",
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2
+                        maxLines = 3,
+                        lineHeight = 18.sp
                     )
                 }
             }

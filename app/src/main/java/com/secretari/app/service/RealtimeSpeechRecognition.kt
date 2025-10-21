@@ -14,8 +14,6 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.delay
-import java.util.Locale
 
 class RealtimeSpeechRecognition(private val context: Context) {
     
@@ -453,10 +451,10 @@ class RealtimeSpeechRecognition(private val context: Context) {
      * Calculates length-based score for result validation
      */
     private fun calculateLengthScore(text: String): Float {
-        return when {
-            text.length in 3..50 -> 1.0f // Optimal length
-            text.length in 1..2 -> 0.7f // Short words (numbers, articles)
-            text.length in 51..100 -> 0.8f // Longer phrases
+        return when (text.length) {
+            in 3..50 -> 1.0f // Optimal length
+            in 1..2 -> 0.7f // Short words (numbers, articles)
+            in 51..100 -> 0.8f // Longer phrases
             else -> 0.3f // Too short or too long
         }
     }

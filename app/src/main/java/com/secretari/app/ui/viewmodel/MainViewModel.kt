@@ -7,19 +7,24 @@ import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.secretari.app.data.database.AppDatabase
+import com.secretari.app.data.model.AppConstants
 import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.Settings
 import com.secretari.app.data.model.User
-import com.secretari.app.data.network.WebSocketClient
 import com.secretari.app.data.network.ServerStatusResponse
+import com.secretari.app.data.network.WebSocketClient
 import com.secretari.app.data.repository.AudioRecordRepository
+import com.secretari.app.service.RealtimeSpeechRecognition
 import com.secretari.app.service.SpeechRecognitionService
 import com.secretari.app.service.UniversalAudioRecorder
-import com.secretari.app.service.RealtimeSpeechRecognition
 import com.secretari.app.util.SettingsManager
 import com.secretari.app.util.UserManager
-import com.secretari.app.data.model.AppConstants
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {

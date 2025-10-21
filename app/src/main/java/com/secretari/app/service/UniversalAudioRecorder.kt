@@ -35,7 +35,12 @@ class UniversalAudioRecorder(private val context: Context) {
             audioFile = createAudioFile()
             
             // Initialize MediaRecorder
-            mediaRecorder = MediaRecorder().apply {
+            mediaRecorder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                MediaRecorder(context)
+            } else {
+                @Suppress("DEPRECATION")
+                MediaRecorder()
+            }.apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
