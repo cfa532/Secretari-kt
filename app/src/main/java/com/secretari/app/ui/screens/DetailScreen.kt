@@ -44,6 +44,7 @@ fun DetailScreen(
     onTranslate: () -> Unit,
     onRegenerate: () -> Unit = {},
     onEditTranscript: (String) -> Unit = {},
+    onEditSummary: (String) -> Unit = {},
     onLocaleChange: (RecognizerLocale) -> Unit,
     isListening: Boolean = false,
     audioLevel: Float = -60f,
@@ -70,7 +71,7 @@ fun DetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Summary") },
+                title = { Text("Records") },
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
@@ -151,7 +152,7 @@ fun DetailScreen(
                 }
                 else -> {
                     record?.let {
-                        SummaryView(record = it, settings = settings)
+                        SummaryView(record = it, settings = settings, onEditSummary = onEditSummary)
                     }
                 }
             }
@@ -400,8 +401,11 @@ fun StreamingView(streamedText: String) {
 }
 
 @Composable
-fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_SETTINGS) {
+fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_SETTINGS, onEditSummary: (String) -> Unit = {}) {
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
+    val summaryText = record.summary[record.locale] ?: "No summary available. Try to regenerate summary."
+    var editedSummary by remember { mutableStateOf(summaryText) }
+    val hasChanges = editedSummary != summaryText
     
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
@@ -413,46 +417,24 @@ fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_S
             Spacer(modifier = Modifier.height(16.dp))
         }
         
-        // Show transcript first
+        // Show editable summary
         item {
-            Text(
-                text = "Transcript:",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
+            OutlinedTextField(
+                value = editedSummary,
+                onValueChange = { editedSummary = it },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 10,
+                maxLines = Int.MAX_VALUE,
+                label = { Text("Summary") },
+                placeholder = { Text("Enter summary...") },
+                trailingIcon = {
+                    if (hasChanges) {
+                        IconButton(onClick = { onEditSummary(editedSummary) }) {
+                            Icon(Icons.Default.Save, "Save changes", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
             )
-            SelectionContainer {
-                OutlinedTextField(
-                    value = record.transcript,
-                    onValueChange = { },
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    minLines = 3,
-                    maxLines = Int.MAX_VALUE
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        
-        // Show summary
-        item {
-            Text(
-                text = "Summary:",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            val summaryText = record.summary[record.locale] ?: "No summary available. Try to regenerate summary."
-            SelectionContainer {
-                OutlinedTextField(
-                    value = summaryText,
-                    onValueChange = { },
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    minLines = 10,
-                    maxLines = Int.MAX_VALUE
-                )
-            }
         }
     }
 }

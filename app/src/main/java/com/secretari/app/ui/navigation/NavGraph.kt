@@ -132,6 +132,15 @@ fun NavGraph(
                         viewModel.selectRecord(updatedRecord)
                     }
                 },
+                onEditSummary = { editedSummary ->
+                    currentRecord?.let { record ->
+                        val updatedSummary = record.summary.toMutableMap()
+                        updatedSummary[record.locale] = editedSummary
+                        val updatedRecord = record.copy(summary = updatedSummary)
+                        viewModel.updateRecord(updatedRecord)
+                        viewModel.selectRecord(updatedRecord)
+                    }
+                },
                 onLocaleChange = { locale ->
                     viewModel.updateSettings(settings.copy(selectedLocale = locale))
                     viewModel.stopRecording()
