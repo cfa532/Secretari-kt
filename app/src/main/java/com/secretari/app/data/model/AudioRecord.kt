@@ -40,12 +40,12 @@ data class AudioRecord @OptIn(InternalSerializationApi::class) constructor(
     
     @OptIn(InternalSerializationApi::class)
     fun resultFromAI(_taskType: TaskType, summaryText: String, settings: Settings) {
-        when {
-            settings.promptType == PromptType.SUMMARY || settings.promptType == PromptType.SUBSCRIPTION -> {
+        when (settings.promptType) {
+            PromptType.SUMMARY, PromptType.SUBSCRIPTION -> {
                 val currentSummary = summary[locale] ?: ""
                 summary = summary + (locale to "$currentSummary$summaryText\n")
             }
-            settings.promptType == PromptType.CHECKLIST -> {
+            PromptType.CHECKLIST -> {
                 // Parse JSON for checklist format
                 try {
                     val jsonString = getAIJson(summaryText)
@@ -58,7 +58,7 @@ data class AudioRecord @OptIn(InternalSerializationApi::class) constructor(
                                     ?: (index + 1)
                                 val title = element["title"]?.jsonPrimitive?.content ?: "Unknown item"
                                 val isChecked = element["isChecked"]?.jsonPrimitive?.content?.toBoolean() ?: false
-                                
+
                                 newMemoItems.add(
                                     MemoJsonData(
                                         id = id,
@@ -81,7 +81,7 @@ data class AudioRecord @OptIn(InternalSerializationApi::class) constructor(
     }
     
     private fun getAIJson(aiJson: String): String {
-        val regex = Regex("\\[(.*?)\\]", RegexOption.DOT_MATCHES_ALL)
+        val regex = Regex("\\[(.*?)]", RegexOption.DOT_MATCHES_ALL)
         val str = aiJson.replace("\n", " ")
         val match = regex.find(str)
         return match?.let { "[${it.groupValues[1]}]" } ?: "[Invalid JSON data]"
