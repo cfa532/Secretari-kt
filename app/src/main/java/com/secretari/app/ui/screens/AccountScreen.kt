@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -205,10 +206,13 @@ fun LoginForm(onLogin: (String, String) -> Unit) {
 fun RegisterForm(onRegister: (User) -> Unit) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var givenName by remember { mutableStateOf("") }
     var familyName by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
     
     LazyColumn(
         modifier = Modifier
@@ -236,6 +240,27 @@ fun RegisterForm(onRegister: (User) -> Unit) {
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Confirm Password") },
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                isError = confirmPassword.isNotEmpty() && password != confirmPassword
+            )
+            
+            if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                Text(
+                    text = "Passwords do not match",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                )
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -271,19 +296,37 @@ fun RegisterForm(onRegister: (User) -> Unit) {
             
             Button(
                 onClick = {
-                    isLoading = true
-                    val user = User(
-                        id = java.util.UUID.randomUUID().toString(),
-                        username = username,
-                        password = password,
-                        email = email,
-                        givenName = givenName,
-                        familyName = familyName
-                    )
-                    onRegister(user)
+                    // Validate inputs
+                    when {
+                        username.isBlank() || username.length > 20 -> {
+                            errorMessage = "Username is required and must be less than 20 characters"
+                            showError = true
+                        }
+                        password.isBlank() -> {
+                            errorMessage = "Password is required"
+                            showError = true
+                        }
+                        password != confirmPassword -> {
+                            errorMessage = "Passwords do not match"
+                            showError = true
+                        }
+                        else -> {
+                            isLoading = true
+                            showError = false
+                            val user = User(
+                                id = java.util.UUID.randomUUID().toString(),
+                                username = username,
+                                password = password,
+                                email = email,
+                                givenName = givenName,
+                                familyName = familyName
+                            )
+                            onRegister(user)
+                        }
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = username.isNotBlank() && password.isNotBlank() && !isLoading
+                enabled = username.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank() && !isLoading
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -291,8 +334,28 @@ fun RegisterForm(onRegister: (User) -> Unit) {
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Register")
+                    Text("SIGN UP")
                 }
+            }
+            
+            if (showError) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // "Have an account? Sign in" link
+            TextButton(
+                onClick = { /* Navigate to login */ },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Have an account? Sign in")
             }
         }
     }

@@ -79,7 +79,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val currentRecord: StateFlow<AudioRecord?> = _currentRecord.asStateFlow()
     
     init {
-        checkLoginStatus()
+        initializeUserAccount()
+    }
+    
+    @OptIn(InternalSerializationApi::class)
+    private fun initializeUserAccount() {
+        viewModelScope.launch {
+            try {
+                // Initialize anonymous account on first launch
+                val success = userManager.initializeAnonymousAccount()
+                if (success) {
+                    checkLoginStatus()
+                } else {
+                    _errorMessage.value = "Failed to initialize user account"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Account initialization error: ${e.message}"
+            }
+        }
     }
     
     @OptIn(InternalSerializationApi::class)
@@ -441,6 +458,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun resetNavigationFlag() {
         _shouldNavigateBack.value = false
+    }
+    
+    @OptIn(InternalSerializationApi::class)
+    suspend fun checkRegistrationRequirement(): Boolean {
+        return try {
+            userManager.needsRegistration()
+        } catch (e: Exception) {
+            false
+        }
     }
     
     @OptIn(InternalSerializationApi::class)

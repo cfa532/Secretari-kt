@@ -16,6 +16,7 @@ import com.secretari.app.data.network.TempUserRequest
 import com.secretari.app.data.network.UpdateUserRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.InternalSerializationApi
@@ -28,6 +29,7 @@ class UserManager(private val context: Context) {
     
     private val userKey = stringPreferencesKey("current_user")
     private val apiService = ApiService.create()
+    private val identifierManager = IdentifierManager(context)
     
     private val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -69,11 +71,12 @@ class UserManager(private val context: Context) {
     }
     
     suspend fun createTempUser(): User? {
-        val deviceId = getDeviceId()
+        val deviceId = identifierManager.getDeviceIdentifier()
         val tempUser = User(
             id = deviceId,
             username = deviceId,
-            password = "zaq1^WSX"
+            password = "zaq1^WSX",
+            dollarBalance = 0.2 // Signup bonus like iOS
         )
         
         return try {
@@ -110,6 +113,10 @@ class UserManager(private val context: Context) {
     
     suspend fun register(user: User): Boolean {
         return try {
+            // Get current anonymous user to merge account data
+            val currentUser = getUser()
+            val anonymousId = currentUser?.id ?: identifierManager.getDeviceIdentifier()
+            
             val response = apiService.registerUser(
                 RegisterRequest(
                     username = user.username,
@@ -117,7 +124,7 @@ class UserManager(private val context: Context) {
                     family_name = user.familyName ?: "",
                     given_name = user.givenName ?: "",
                     email = user.email ?: "",
-                    id = user.id
+                    id = anonymousId // Use anonymous account ID for merging
                 )
             )
             
@@ -135,6 +142,8 @@ class UserManager(private val context: Context) {
                         monthlyUsage = it.monthly_usage
                     )
                     persistUser(updatedUser)
+                    // After registration, user needs to login to get token
+                    userToken = null
                 }
                 true
             } else {
@@ -151,6 +160,19 @@ class UserManager(private val context: Context) {
             if (response.isSuccessful) {
                 val body = response.body()
                 userToken = body?.access_token
+                
+                // After successful login, fetch updated user data with merged account
+                // This will include the balance and data from the anonymous account
+                val currentUser = getUser()
+                if (currentUser != null) {
+                    // Update user data with server response
+                    val updatedUser = currentUser.copy(
+                        username = username,
+                        password = "" // Don't store password
+                    )
+                    persistUser(updatedUser)
+                }
+                
                 true
             } else {
                 false
@@ -221,6 +243,50 @@ class UserManager(private val context: Context) {
             }
         } catch (e: Exception) {
             null
+        }
+    }
+    
+    /**
+     * Checks if the user needs to register based on balance and account type
+     */
+    suspend fun needsRegistration(): Boolean {
+        val user = getUser()
+        return user?.let { 
+            // If username is longer than 20 chars, it's a temp user (device ID)
+            val isTempUser = it.username.length > 20
+            // If temp user and low balance, needs registration
+            isTempUser && it.dollarBalance <= 0.1
+        } ?: true // If no user, needs registration
+    }
+    
+    /**
+     * Gets the current user synchronously
+     */
+    suspend fun getUser(): User? {
+        return try {
+            val preferences = context.userDataStore.data.firstOrNull()
+            val userJson = preferences?.get(userKey)
+            userJson?.let {
+                Json.decodeFromString<User>(it)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    /**
+     * Initializes anonymous account on first app launch
+     */
+    suspend fun initializeAnonymousAccount(): Boolean {
+        return try {
+            val isFirstLaunch = identifierManager.setupIdentifier()
+            if (isFirstLaunch) {
+                createTempUser() != null
+            } else {
+                true
+            }
+        } catch (e: Exception) {
+            false
         }
     }
     

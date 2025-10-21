@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,6 +64,7 @@ import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.RecognizerLocale
 import com.secretari.app.data.model.Settings
+import com.secretari.app.data.model.User
 import com.secretari.app.ui.viewmodel.MainViewModel
 import com.secretari.app.util.UserManager
 import kotlinx.serialization.InternalSerializationApi
@@ -86,6 +88,7 @@ fun MainScreen(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val settings by viewModel.settings.collectAsState(initial = com.secretari.app.data.model.AppConstants.DEFAULT_SETTINGS)
+    val currentUser by viewModel.currentUser.collectAsState(initial = null)
     
     Scaffold(
         topBar = {
@@ -271,6 +274,17 @@ fun MainScreen(
                             settings = settings,
                             onClick = { onRecordClick(record) },
                             onDelete = { onDeleteRecord(record) }
+                        )
+                    }
+                }
+                
+                // Balance warning component
+                currentUser?.let { user ->
+                    if (user.username.length > 20 && user.dollarBalance <= 0.1) {
+                        BalanceWarningCard(
+                            user = user,
+                            onRegister = onNavigateToAccount,
+                            onRecharge = onNavigateToStore
                         )
                     }
                 }
@@ -481,6 +495,70 @@ fun MainScreenWithRecordsPreview() {
             onNavigateToStore = {},
             onNavigateToHelp = {}
         )
+    }
+}
+
+@OptIn(InternalSerializationApi::class)
+@Composable
+fun BalanceWarningCard(
+    user: User,
+    onRegister: () -> Unit,
+    onRecharge: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "Low Balance",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = String.format(Locale.US, "Balance: $%.2f", user.dollarBalance),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Please register an account or recharge to continue using premium features.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onRegister,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Text("Register")
+                }
+                Button(
+                    onClick = onRecharge,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text("Recharge")
+                }
+            }
+        }
     }
 }
 
