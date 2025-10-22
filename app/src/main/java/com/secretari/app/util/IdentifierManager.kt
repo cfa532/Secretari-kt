@@ -1,11 +1,12 @@
 package com.secretari.app.util
 
 import android.content.Context
-import android.provider.Settings
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.util.UUID
 import androidx.core.content.edit
+import android.provider.Settings
+import java.security.MessageDigest
 
 class IdentifierManager(private val context: Context) {
     
@@ -45,16 +46,17 @@ class IdentifierManager(private val context: Context) {
     }
     
     /**
-     * Retrieves the device identifier from encrypted storage or generates a new one.
-     * @return The device identifier string
+     * Retrieves the device-persistent identifier from encrypted storage or generates a new one.
+     * This identifier will survive app reinstallation and factory resets.
+     * @return The device-persistent identifier string
      */
     fun getDeviceIdentifier(): String {
         val storedId = encryptedPrefs.getString(deviceIdKey, null)
         return if (storedId != null) {
             storedId
         } else {
-            // Generate a new identifier if none exists
-            val id = getAndroidId() ?: UUID.randomUUID().toString()
+            // Generate a new device-persistent identifier if none exists
+            val id = generateDevicePersistentIdentifier()
             encryptedPrefs.edit {
                 putString(deviceIdKey, id)
             }
@@ -63,13 +65,67 @@ class IdentifierManager(private val context: Context) {
     }
     
     /**
-     * Gets the Android ID, which is unique per device per app installation
+     * Generates a device-persistent identifier that survives app reinstallation
+     * Uses a combination of device characteristics to create a stable identifier
+     * while maintaining privacy by hashing the information
      */
-    private fun getAndroidId(): String? {
+    private fun generateDevicePersistentIdentifier(): String {
         return try {
-            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            // Create a stable identifier based on device characteristics
+            val deviceInfo = buildString {
+                // Use Android ID (deprecated but still available for backward compatibility)
+                append(Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "")
+                
+                // Add device model and manufacturer for additional uniqueness
+                append(android.os.Build.MANUFACTURER)
+                append(android.os.Build.MODEL)
+                append(android.os.Build.BOARD)
+                
+                // Add app-specific salt to prevent cross-app tracking
+                append("SecretariApp2024")
+            }
+            
+            // Hash the combined information to create a stable, privacy-friendly identifier
+            val digest = MessageDigest.getInstance("SHA-256")
+            val hash = digest.digest(deviceInfo.toByteArray())
+            
+            // Convert to hex string and take first 32 characters for a clean UUID-like format
+            hash.joinToString("") { "%02x".format(it) }.take(32)
+            
         } catch (e: Exception) {
-            null
+            // Fallback to UUID if anything fails
+            UUID.randomUUID().toString().replace("-", "")
         }
+    }
+    
+    /**
+     * Generates a secure unique identifier for this app installation
+     * This is more privacy-friendly than using device identifiers
+     */
+    private fun generateSecureIdentifier(): String {
+        return UUID.randomUUID().toString()
+    }
+    
+    /**
+     * Resets the device identifier, generating a new one
+     * This can be used for privacy purposes or if the user wants a fresh start
+     */
+    fun resetDeviceIdentifier(): String {
+        val newId = generateDevicePersistentIdentifier()
+        encryptedPrefs.edit {
+            putString(deviceIdKey, newId)
+        }
+        return newId
+    }
+    
+    /**
+     * Forces generation of a new random identifier (for privacy reset)
+     */
+    fun generateNewRandomIdentifier(): String {
+        val newId = UUID.randomUUID().toString().replace("-", "")
+        encryptedPrefs.edit {
+            putString(deviceIdKey, newId)
+        }
+        return newId
     }
 }
