@@ -52,9 +52,12 @@ import java.util.Locale
 fun AccountScreen(
     user: User?,
     loginStatus: UserManager.LoginStatus,
+    showLoginFormForAnonymous: Boolean,
     onLogin: (String, String) -> Unit,
     onRegister: (User) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onShowLoginForm: () -> Unit,
+    onHideLoginForm: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -83,7 +86,11 @@ fun AccountScreen(
                 UserManager.LoginStatus.SIGNED_IN -> {
                     // Check if user is anonymous (username > 20 chars indicates device ID)
                     if ((user?.username?.length ?: 0) > 20) {
-                        AnonymousUserProfile(user = user, onRegister = onRegister, onLogin = onLogin)
+                        if (showLoginFormForAnonymous) {
+                            LoginForm(onLogin = onLogin, onBack = onHideLoginForm)
+                        } else {
+                            AnonymousUserProfile(user = user, onRegister = onRegister, onLogin = onLogin, onShowLoginForm = onShowLoginForm)
+                        }
                     } else {
                         AccountDetails(user = user)
                     }
@@ -117,18 +124,21 @@ fun AccountDetails(user: User?) {
             user?.let {
                 val displayName = if (it.username.length > 20) "Anonymous User" else it.username
                 InfoRow("Username", displayName)
-            }
-            user?.email?.let {
-                InfoRow("Email", it)
-            }
-            user?.let {
-                InfoRow("Name", "${it.givenName ?: ""} ${it.familyName ?: ""}".trim())
-            }
-            user?.let {
-                InfoRow("Balance", String.format(Locale.US, "$%.2f", it.dollarBalance))
-            }
-            user?.let {
-                InfoRow("Tokens", it.tokenCount.toString())
+                
+                if (it.username.length > 20) {
+                    // Anonymous user - show token usage (same as iOS)
+                    InfoRow("Token usage", it.tokenCount.toString())
+                } else {
+                    // Registered user - show full account information
+                    it.email?.let { email ->
+                        InfoRow("Email", email)
+                    }
+                    InfoRow("Name", "${it.givenName ?: ""} ${it.familyName ?: ""}".trim())
+                    
+                    // For registered users, show balance converted to tokens (matching iOS logic)
+                    val estimatedTokens = estimateTokens(it.dollarBalance)
+                    InfoRow("Account balance in USD", estimatedTokens.toString())
+                }
             }
         }
     }
@@ -154,8 +164,13 @@ fun InfoRow(label: String, value: String) {
     }
 }
 
+// Helper function to estimate tokens from dollar balance (matching iOS logic)
+private fun estimateTokens(dollarBalance: Double): Int {
+    return (dollarBalance * 4 * 1000000 / 30).toInt()
+}
+
 @Composable
-fun LoginForm(onLogin: (String, String) -> Unit) {
+fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -167,6 +182,19 @@ fun LoginForm(onLogin: (String, String) -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Add back button if onBack is provided
+        onBack?.let {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                TextButton(onClick = it) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Text("Back")
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
@@ -373,7 +401,8 @@ fun RegisterForm(onRegister: (User) -> Unit) {
 fun AnonymousUserProfile(
     user: User?,
     onRegister: (User) -> Unit,
-    onLogin: (String, String) -> Unit
+    onLogin: (String, String) -> Unit,
+    onShowLoginForm: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -431,9 +460,7 @@ fun AnonymousUserProfile(
             // Login Button
             OutlinedButton(
                 onClick = {
-                    // This will be handled by the parent to show login form
-                    // For now, we'll create a dummy login call
-                    onLogin("", "")
+                    onShowLoginForm()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

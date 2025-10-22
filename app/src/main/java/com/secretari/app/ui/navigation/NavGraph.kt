@@ -254,6 +254,7 @@ fun NavGraph(
             AccountScreen(
                 user = currentUser,
                 loginStatus = loginStatus,
+                showLoginFormForAnonymous = viewModel.showLoginFormForAnonymous.collectAsState(initial = false).value,
                 onLogin = { username, password ->
                     viewModel.login(username, password) { success ->
                         if (success) {
@@ -270,6 +271,12 @@ fun NavGraph(
                 },
                 onBack = {
                     navController.popBackStack()
+                },
+                onShowLoginForm = {
+                    viewModel.showLoginForm()
+                },
+                onHideLoginForm = {
+                    viewModel.hideLoginForm()
                 }
             )
         }
