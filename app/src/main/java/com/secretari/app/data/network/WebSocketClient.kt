@@ -34,11 +34,12 @@ class WebSocketClient(private val baseUrl: String = "wss://secretari.leither.uk"
         
         val listener = object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                Log.d("WebSocket", "Connected")
+                Log.d("WebSocket", "Connected to $url")
             }
             
             override fun onMessage(webSocket: WebSocket, text: String) {
                 try {
+                    Log.d("WebSocket", "Received message: $text")
                     val json = Json.parseToJsonElement(text).jsonObject
                     val type = json["type"]?.jsonPrimitive?.content
                     
@@ -70,7 +71,7 @@ class WebSocketClient(private val baseUrl: String = "wss://secretari.leither.uk"
             }
             
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e("WebSocket", "Connection failed", t)
+                Log.e("WebSocket", "Connection failed: ${t.message}", t)
                 trySend(WebSocketMessage.Error(t.message ?: "Connection failed"))
                 close()
             }
@@ -88,6 +89,7 @@ class WebSocketClient(private val baseUrl: String = "wss://secretari.leither.uk"
         webSocket = client.newWebSocket(request, listener)
         
         awaitClose {
+            Log.d("WebSocket", "Closing WebSocket connection")
             webSocket?.close(1000, "Client closed")
             webSocket = null
         }
@@ -101,6 +103,11 @@ class WebSocketClient(private val baseUrl: String = "wss://secretari.leither.uk"
         hasPro: Boolean,
         llmParams: Map<String, String>
     ) {
+        if (webSocket == null) {
+            Log.e("WebSocket", "Cannot send message: WebSocket is null")
+            return
+        }
+        
         val message = JSONObject().apply {
             put("input", JSONObject().apply {
                 put("prompt", if (prompt.isEmpty()) defaultPrompt else prompt)
@@ -114,8 +121,13 @@ class WebSocketClient(private val baseUrl: String = "wss://secretari.leither.uk"
             })
         }
         
-        Log.d("WebSocket", "Sending: $message")
-        webSocket?.send(message.toString())
+        Log.d("WebSocket", "Sending message: $message")
+        val success = webSocket?.send(message.toString()) ?: false
+        if (!success) {
+            Log.e("WebSocket", "Failed to send message - WebSocket may be closed")
+        } else {
+            Log.d("WebSocket", "Message sent successfully")
+        }
     }
     
     fun disconnect() {

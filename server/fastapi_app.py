@@ -2,6 +2,7 @@ import json, sys, random
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Union
 from fastapi import Depends, FastAPI, HTTPException, status, Query, WebSocket, WebSocketDisconnect, Request
+from fastapi.websockets import WebSocketState
 from contextlib import asynccontextmanager
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse
@@ -364,82 +365,108 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query()):
             return
         
         while True:
-            message = await websocket.receive_text()
-            event = json.loads(message)
-            print("Incoming event: ", event)    # request from client, with parameters
-            query = event["input"]
-            params = event["parameters"]
-            llm_model = LLM_MODEL
+            try:
+                # Check if WebSocket is still connected before receiving
+                if websocket.client_state != WebSocketState.CONNECTED:
+                    print("WebSocket disconnected, breaking loop")
+                    break
+                    
+                message = await websocket.receive_text()
+                event = json.loads(message)
+                print("Incoming event: ", event)    # request from client, with parameters
+                query = event["input"]
+                params = event["parameters"]
+                llm_model = LLM_MODEL
 
-            # Turbo seems to have just the right content for memo. 4o does better in summarizing.
-            # if query["prompt_type"] == "memo":
-            #     llm_model = "gpt-4-turbo"
+                # Turbo seems to have just the right content for memo. 4o does better in summarizing.
+                # if query["prompt_type"] == "memo":
+                #     llm_model = "gpt-4-turbo"
 
-            # when dollar balance is lower than $0.1, user gpt-3.5-turbo
-            if not query["subscription"]:
-                if user.dollar_balance < MIN_BALANCE:
+                # when dollar balance is lower than $0.1, user gpt-3.5-turbo
+                if not query["subscription"]:
+                    if user.dollar_balance < MIN_BALANCE:
+                        await websocket.send_text(json.dumps({
+                            "type": "error",
+                            "message": "Low balance. Please purchase consumable product or subscribe.", 
+                            }))
+                        continue
+                    elif user.dollar_balance < MIN_BALANCE:
+                        llm_model = "gpt-3.5-turbo"
+                        token_splitter._chunk_size = MAX_TOKEN["gpt-3.5-turbo"]
+                else:
+                    # a subscriber. Check monthly usage
+                    current_month = str(datetime.now().month)
+                    if user.monthly_usage.get(current_month) and user.monthly_usage.get(current_month) >= MAX_EXPENSE:
+                        await websocket.send_text(json.dumps({
+                            "type": "error",
+                            "message": "Monthly max expense exceeded. Purchase consumable product if necessary.", 
+                            }))
+                        continue
+
+                # create the right Chat LLM
+                if params["llm"] == "openai":
+                    # randomly select OpenAI key from a list
+                    CHAT_LLM = ChatOpenAI(
+                        api_key = random.choice(OPENAI_KEYS),       # pick a random OpenAI key from a list
+                        temperature = float(params["temperature"]),
+                        model = llm_model,
+                        streaming = True,
+                        verbose = True
+                    )
+                elif params["llm"] == "qianfan":
+                    continue
+
+                # lapi.bookkeeping(0.015, 123, user)
+                # await websocket.send_text(json.dumps({
+                #     "type": "result",
+                #     "answer": event["input"]["rawtext"], 
+                #     "tokens": int(111 * lapi.cost_efficiency),
+                #     "cost": 0.015 * lapi.cost_efficiency,
+                #     "eof": True,
+                #     }))
+                # continue
+
+                chain = CHAT_LLM
+                resp = ""
+                chunks = token_splitter.split_text(query["rawtext"])
+                for index, ci in enumerate(chunks):
+                    with get_cost_tracker_callback(llm_model) as cb:
+                        # chain = ConversationChain(llm=CHAT_LLM, memory=memory, output_parser=StrOutputParser())
+                        async for chunk in chain.astream(query["prompt"] + "\n\n" + ci):
+                            print(chunk.content, end="|", flush=True)    # chunk size can be big
+                            resp += chunk.content
+                            # Check connection before sending
+                            if websocket.client_state == WebSocketState.CONNECTED:
+                                await websocket.send_text(json.dumps({"type": "stream", "data": chunk.content}))
+                            else:
+                                print("WebSocket disconnected during streaming")
+                                break
+                        print('\n', cb, '\nLLMModel:', llm_model, index, len(chunks))
+                        sys.stdout.flush()
+
+                        # Check connection before sending final result
+                        if websocket.client_state == WebSocketState.CONNECTED:
+                            await websocket.send_text(json.dumps({
+                                "type": "result",
+                                "answer": resp,
+                                "tokens": int(cb.total_tokens * lapi.cost_efficiency),  # sum of prompt tokens and completion tokens. Prices are different.
+                                "cost": cb.total_cost * lapi.cost_efficiency,           # total cost in USD
+                                "eof": index == (len(chunks) - 1),                      # end of content
+                                }))
+                        lapi.bookkeeping(cb.total_cost, cb.total_tokens, user)
+                        
+            except WebSocketDisconnect:
+                print("WebSocket disconnected during message processing")
+                break
+            except Exception as e:
+                print(f"Error processing WebSocket message: {e}")
+                # Send error to client if still connected
+                if websocket.client_state == WebSocketState.CONNECTED:
                     await websocket.send_text(json.dumps({
                         "type": "error",
-                        "message": "Low balance. Please purchase consumable product or subscribe.", 
-                        }))
-                    continue
-                elif user.dollar_balance < MIN_BALANCE:
-                    llm_model = "gpt-3.5-turbo"
-                    token_splitter._chunk_size = MAX_TOKEN["gpt-3.5-turbo"]
-            else:
-                # a subscriber. Check monthly usage
-                current_month = str(datetime.now().month)
-                if user.monthly_usage.get(current_month) and user.monthly_usage.get(current_month) >= MAX_EXPENSE:
-                    await websocket.send_text(json.dumps({
-                        "type": "error",
-                        "message": "Monthly max expense exceeded. Purchase consumable product if necessary.", 
-                        }))
-                    continue
-
-            # create the right Chat LLM
-            if params["llm"] == "openai":
-                # randomly select OpenAI key from a list
-                CHAT_LLM = ChatOpenAI(
-                    api_key = random.choice(OPENAI_KEYS),       # pick a random OpenAI key from a list
-                    temperature = float(params["temperature"]),
-                    model = llm_model,
-                    streaming = True,
-                    verbose = True
-                )
-            elif params["llm"] == "qianfan":
-                continue
-
-            # lapi.bookkeeping(0.015, 123, user)
-            # await websocket.send_text(json.dumps({
-            #     "type": "result",
-            #     "answer": event["input"]["rawtext"], 
-            #     "tokens": int(111 * lapi.cost_efficiency),
-            #     "cost": 0.015 * lapi.cost_efficiency,
-            #     "eof": True,
-            #     }))
-            # continue
-
-            chain = CHAT_LLM
-            resp = ""
-            chunks = token_splitter.split_text(query["rawtext"])
-            for index, ci in enumerate(chunks):
-                with get_cost_tracker_callback(llm_model) as cb:
-                    # chain = ConversationChain(llm=CHAT_LLM, memory=memory, output_parser=StrOutputParser())
-                    async for chunk in chain.astream(query["prompt"] + "\n\n" + ci):
-                        print(chunk.content, end="|", flush=True)    # chunk size can be big
-                        resp += chunk.content
-                        await websocket.send_text(json.dumps({"type": "stream", "data": chunk.content}))
-                    print('\n', cb, '\nLLMModel:', llm_model, index, len(chunks))
-                    sys.stdout.flush()
-
-                    await websocket.send_text(json.dumps({
-                        "type": "result",
-                        "answer": resp,
-                        "tokens": int(cb.total_tokens * lapi.cost_efficiency),  # sum of prompt tokens and completion tokens. Prices are different.
-                        "cost": cb.total_cost * lapi.cost_efficiency,           # total cost in USD
-                        "eof": index == (len(chunks) - 1),                      # end of content
-                        }))
-                    lapi.bookkeeping(cb.total_cost, cb.total_tokens, user)
+                        "message": f"Server error: {str(e)}"
+                    }))
+                break
 
     except WebSocketDisconnect:
         connectionManager.disconnect(websocket)
