@@ -73,7 +73,13 @@ fun AccountScreen(
                     })
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        when {
+                            showLoginFormForAnonymous -> onHideLoginForm()
+                            showRegisterFormForAnonymous -> onHideRegisterForm()
+                            else -> onBack()
+                        }
+                    }) {
                         Icon(Icons.Default.ArrowBack, "Back")
                     }
                 }
