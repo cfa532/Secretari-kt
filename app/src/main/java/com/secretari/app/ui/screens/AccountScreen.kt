@@ -120,8 +120,9 @@ fun AccountDetails(user: User?) {
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     
-                    user?.displayUsername?.let {
-                        InfoRow("Username", it)
+                    user?.let {
+                        val displayName = if (it.username.length > 20) "Anonymous User" else it.username
+                        InfoRow("Username", displayName)
                     }
                     user?.email?.let {
                         InfoRow("Email", it)
@@ -382,154 +383,146 @@ fun AnonymousUserProfile(
     onRegister: (User) -> Unit,
     onLogin: (String, String) -> Unit
 ) {
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
         // Show account details for anonymous user
-        item {
-            AccountDetails(user = user)
-        }
+        AccountDetails(user = user)
         
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Anonymous user notice
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = "Anonymous User",
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Text(
-                        text = "Temporary Account",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text(
-                        text = "Register to save your data and access premium features.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
+        Spacer(modifier = Modifier.height(24.dp))
         
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Register Button
-            Button(
-                onClick = {
-                    // Navigate to registration (this will be handled by the parent)
-                    val tempUser = User(
-                        id = user?.id ?: "",
-                        username = "",
-                        password = "",
-                        email = "",
-                        givenName = "",
-                        familyName = ""
-                    )
-                    onRegister(tempUser)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
+        // Anonymous user notice
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = "Anonymous User",
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
                 Text(
-                    text = "Create Account",
+                    text = "Temporary Account",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Login Button
-            OutlinedButton(
-                onClick = {
-                    // This will be handled by the parent to show login form
-                    // For now, we'll create a dummy login call
-                    onLogin("", "")
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 Text(
-                    text = "Sign In to Existing Account",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
+                    text = "Register to save your data and access premium features.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
         
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Benefits section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Register Button
+        Button(
+            onClick = {
+                // Navigate to registration (this will be handled by the parent)
+                val tempUser = User(
+                    id = user?.id ?: "",
+                    username = "",
+                    password = "",
+                    email = "",
+                    givenName = "",
+                    familyName = ""
                 )
+                onRegister(tempUser)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text(
+                text = "Create Account",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Login Button
+        OutlinedButton(
+            onClick = {
+                // This will be handled by the parent to show login form
+                // For now, we'll create a dummy login call
+                onLogin("", "")
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text(
+                text = "Sign In to Existing Account",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // Benefits section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Benefits of Registration",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    val benefits = listOf(
-                        "Save your recordings and summaries",
-                        "Access premium AI features",
-                        "Sync across multiple devices",
-                        "Backup your data securely"
-                    )
-                    
-                    benefits.forEach { benefit ->
-                        Row(
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Star,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = benefit,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                Text(
+                    text = "Benefits of Registration",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                val benefits = listOf(
+                    "Save your recordings and summaries",
+                    "Access premium AI features",
+                    "Sync across multiple devices",
+                    "Backup your data securely"
+                )
+                
+                benefits.forEach { benefit ->
+                    Row(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = benefit,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
             }

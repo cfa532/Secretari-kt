@@ -80,21 +80,64 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     init {
         initializeUserAccount()
+        observeUserChanges()
     }
     
     @OptIn(InternalSerializationApi::class)
     private fun initializeUserAccount() {
         viewModelScope.launch {
             try {
+                Log.d("MainViewModel", "Initializing anonymous account...")
                 // Initialize anonymous account on first launch
                 val success = userManager.initializeAnonymousAccount()
+                Log.d("MainViewModel", "Anonymous account initialization result: $success")
                 if (success) {
                     checkLoginStatus()
                 } else {
                     _errorMessage.value = "Failed to initialize user account"
                 }
             } catch (e: Exception) {
+                Log.e("MainViewModel", "Account initialization error", e)
                 _errorMessage.value = "Account initialization error: ${e.message}"
+            }
+        }
+    }
+    
+    @OptIn(InternalSerializationApi::class)
+    private fun observeUserChanges() {
+        viewModelScope.launch {
+            currentUser.collect { user ->
+                updateLoginStatus(user)
+            }
+        }
+    }
+    
+    @OptIn(InternalSerializationApi::class)
+    private fun updateLoginStatus(user: User?) {
+        val token = userManager.userToken
+        Log.d("MainViewModel", "updateLoginStatus - token: ${token?.take(10)}, user: ${user?.username}")
+        
+        if (token != null) {
+            Log.d("MainViewModel", "Setting status to SIGNED_IN (has token)")
+            _loginStatus.value = UserManager.LoginStatus.SIGNED_IN
+        } else {
+            user?.let { currentUser ->
+                val isAnonymous = currentUser.username.length > 20
+                Log.d("MainViewModel", "User username: '${currentUser.username}' (length: ${currentUser.username.length}), isAnonymous: $isAnonymous")
+                
+                _loginStatus.value = if (isAnonymous) {
+                    // Anonymous user (device ID as username) - they are signed in with a temporary account
+                    Log.d("MainViewModel", "Setting status to SIGNED_IN (anonymous user)")
+                    UserManager.LoginStatus.SIGNED_IN
+                } else {
+                    // Registered user without token - they need to login
+                    Log.d("MainViewModel", "Setting status to SIGNED_OUT (registered user without token)")
+                    UserManager.LoginStatus.SIGNED_OUT
+                }
+            } ?: run {
+                // No user at all - unregistered
+                Log.d("MainViewModel", "Setting status to UNREGISTERED (no user)")
+                _loginStatus.value = UserManager.LoginStatus.UNREGISTERED
             }
         }
     }
@@ -102,18 +145,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     @OptIn(InternalSerializationApi::class)
     private fun checkLoginStatus() {
         viewModelScope.launch {
-            val token = userManager.userToken
-            if (token != null) {
-                _loginStatus.value = UserManager.LoginStatus.SIGNED_IN
-            } else {
-                currentUser.firstOrNull()?.let { user ->
-                    _loginStatus.value = if (user.username.length > 20) {
-                        UserManager.LoginStatus.UNREGISTERED
-                    } else {
-                        UserManager.LoginStatus.SIGNED_OUT
-                    }
-                }
-            }
+            val user = currentUser.firstOrNull()
+            updateLoginStatus(user)
         }
     }
     

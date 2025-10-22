@@ -72,6 +72,7 @@ class UserManager(private val context: Context) {
     
     suspend fun createTempUser(): User? {
         val deviceId = identifierManager.getDeviceIdentifier()
+        android.util.Log.d("UserManager", "Creating temp user with device ID: $deviceId")
         val tempUser = User(
             id = deviceId,
             username = deviceId,
@@ -91,19 +92,22 @@ class UserManager(private val context: Context) {
             if (response.isSuccessful) {
                 val body = response.body()
                 userToken = body?.token?.access_token
+                android.util.Log.d("UserManager", "Temp user created successfully, token: ${userToken?.take(10)}")
                 
                 val user = body?.user?.let {
                     User(
                         id = it.id,
-                        username = it.username,
+                        username = deviceId, // Keep device ID as username for anonymous users
                         tokenCount = it.token_count,
                         dollarBalance = it.dollar_balance,
                         monthlyUsage = it.monthly_usage
                     )
                 }
+                android.util.Log.d("UserManager", "Created user with username: '${user?.username}' (length: ${user?.username?.length})")
                 user?.let { persistUser(it) }
                 user
             } else {
+                android.util.Log.e("UserManager", "Failed to create temp user, response code: ${response.code()}")
                 null
             }
         } catch (e: Exception) {
@@ -281,11 +285,21 @@ class UserManager(private val context: Context) {
         return try {
             val isFirstLaunch = identifierManager.setupIdentifier()
             if (isFirstLaunch) {
+                // First launch - create new temp user
                 createTempUser() != null
             } else {
-                true
+                // Not first launch - check if user exists, if not create one
+                val existingUser = getUser()
+                if (existingUser == null) {
+                    android.util.Log.d("UserManager", "No existing user found, creating new temp user")
+                    createTempUser() != null
+                } else {
+                    android.util.Log.d("UserManager", "Existing user found: ${existingUser.username}")
+                    true
+                }
             }
         } catch (e: Exception) {
+            android.util.Log.e("UserManager", "Error initializing anonymous account", e)
             false
         }
     }
