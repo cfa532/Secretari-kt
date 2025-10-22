@@ -5,7 +5,6 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.util.UUID
 import androidx.core.content.edit
-import android.provider.Settings
 import java.security.MessageDigest
 
 class IdentifierManager(private val context: Context) {
@@ -73,13 +72,16 @@ class IdentifierManager(private val context: Context) {
         return try {
             // Create a stable identifier based on device characteristics
             val deviceInfo = buildString {
-                // Use Android ID (deprecated but still available for backward compatibility)
-                append(Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "")
-                
-                // Add device model and manufacturer for additional uniqueness
+                // Use device hardware characteristics that are stable across resets
                 append(android.os.Build.MANUFACTURER)
                 append(android.os.Build.MODEL)
                 append(android.os.Build.BOARD)
+                append(android.os.Build.HARDWARE)
+                append(android.os.Build.DEVICE)
+                append(android.os.Build.PRODUCT)
+                append(android.os.Build.FINGERPRINT) // This is stable and unique per device
+                append(android.os.Build.BRAND)
+                append(android.os.Build.TYPE)
                 
                 // Add app-specific salt to prevent cross-app tracking
                 append("SecretariApp2024")
