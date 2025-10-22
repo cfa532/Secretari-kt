@@ -69,6 +69,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _showLoginFormForAnonymous = MutableStateFlow(false)
     val showLoginFormForAnonymous: StateFlow<Boolean> = _showLoginFormForAnonymous.asStateFlow()
     
+    private val _showRegisterFormForAnonymous = MutableStateFlow(false)
+    val showRegisterFormForAnonymous: StateFlow<Boolean> = _showRegisterFormForAnonymous.asStateFlow()
+    
     private val _audioFilePath = MutableStateFlow<String?>(null)
     val audioFilePath: StateFlow<String?> = _audioFilePath.asStateFlow()
     
@@ -468,10 +471,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     fun showLoginForm() {
         _showLoginFormForAnonymous.value = true
+        _showRegisterFormForAnonymous.value = false
     }
     
     fun hideLoginForm() {
         _showLoginFormForAnonymous.value = false
+    }
+    
+    fun showRegisterForm() {
+        _showRegisterFormForAnonymous.value = true
+        _showLoginFormForAnonymous.value = false
+    }
+    
+    fun hideRegisterForm() {
+        _showRegisterFormForAnonymous.value = false
     }
     
     @OptIn(InternalSerializationApi::class)

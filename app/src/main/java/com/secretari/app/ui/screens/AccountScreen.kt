@@ -53,11 +53,14 @@ fun AccountScreen(
     user: User?,
     loginStatus: UserManager.LoginStatus,
     showLoginFormForAnonymous: Boolean,
+    showRegisterFormForAnonymous: Boolean,
     onLogin: (String, String) -> Unit,
     onRegister: (User) -> Unit,
     onBack: () -> Unit,
     onShowLoginForm: () -> Unit,
-    onHideLoginForm: () -> Unit
+    onHideLoginForm: () -> Unit,
+    onShowRegisterForm: () -> Unit,
+    onHideRegisterForm: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -86,10 +89,16 @@ fun AccountScreen(
                 UserManager.LoginStatus.SIGNED_IN -> {
                     // Check if user is anonymous (username > 20 chars indicates device ID)
                     if ((user?.username?.length ?: 0) > 20) {
-                        if (showLoginFormForAnonymous) {
-                            LoginForm(onLogin = onLogin, onBack = onHideLoginForm)
-                        } else {
-                            AnonymousUserProfile(user = user, onRegister = onRegister, onLogin = onLogin, onShowLoginForm = onShowLoginForm)
+                        when {
+                            showLoginFormForAnonymous -> {
+                                LoginForm(onLogin = onLogin, onBack = onHideLoginForm, onShowRegisterForm = onShowRegisterForm)
+                            }
+                            showRegisterFormForAnonymous -> {
+                                RegisterForm(onRegister = onRegister, onBack = onHideRegisterForm, onShowLoginForm = onShowLoginForm)
+                            }
+                            else -> {
+                                AnonymousUserProfile(user = user, onRegister = onRegister, onLogin = onLogin, onShowLoginForm = onShowLoginForm, onShowRegisterForm = onShowRegisterForm)
+                            }
                         }
                     } else {
                         AccountDetails(user = user)
@@ -170,7 +179,7 @@ private fun estimateTokens(dollarBalance: Double): Int {
 }
 
 @Composable
-fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null) {
+fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, onShowRegisterForm: (() -> Unit)? = null) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -233,12 +242,23 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null) {
                 Text("Login")
             }
         }
+        
+        // Add "Create Account" link if onShowRegisterForm is provided
+        onShowRegisterForm?.let {
+            Spacer(modifier = Modifier.height(16.dp))
+            TextButton(
+                onClick = it,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Don't have an account? Create Account")
+            }
+        }
     }
 }
 
 @OptIn(InternalSerializationApi::class)
 @Composable
-fun RegisterForm(onRegister: (User) -> Unit) {
+fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onShowLoginForm: (() -> Unit)? = null) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -256,6 +276,22 @@ fun RegisterForm(onRegister: (User) -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        item {
+            // Add back button if onBack is provided
+            onBack?.let {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    TextButton(onClick = it) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Text("Back")
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+        
         item {
             OutlinedTextField(
                 value = username,
@@ -386,11 +422,13 @@ fun RegisterForm(onRegister: (User) -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
             
             // "Have an account? Sign in" link
-            TextButton(
-                onClick = { /* Navigate to login */ },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Have an account? Sign in")
+            onShowLoginForm?.let {
+                TextButton(
+                    onClick = it,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Have an account? Sign in")
+                }
             }
         }
     }
@@ -402,7 +440,8 @@ fun AnonymousUserProfile(
     user: User?,
     onRegister: (User) -> Unit,
     onLogin: (String, String) -> Unit,
-    onShowLoginForm: () -> Unit
+    onShowLoginForm: () -> Unit,
+    onShowRegisterForm: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -426,16 +465,7 @@ fun AnonymousUserProfile(
             // Register Button
             Button(
                 onClick = {
-                    // Navigate to registration (this will be handled by the parent)
-                    val tempUser = User(
-                        id = user?.id ?: "",
-                        username = "",
-                        password = "",
-                        email = "",
-                        givenName = "",
-                        familyName = ""
-                    )
-                    onRegister(tempUser)
+                    onShowRegisterForm()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
