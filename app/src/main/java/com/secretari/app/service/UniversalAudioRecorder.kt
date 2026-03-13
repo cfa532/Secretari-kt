@@ -2,8 +2,8 @@ package com.secretari.app.service
 
 import android.content.Context
 import android.media.MediaRecorder
-import android.os.Environment
 import android.util.Log
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -11,30 +11,32 @@ import java.io.File
 import java.io.IOException
 
 class UniversalAudioRecorder(private val context: Context) {
-    
+
     private var mediaRecorder: MediaRecorder? = null
     private var isRecording = false
     private var audioFile: File? = null
-    
+    private var startTime = 0L
+    private var recordingChannel: SendChannel<RecordingResult>? = null
+
     sealed class RecordingResult {
         object Started : RecordingResult()
         data class AudioLevel(val level: Float) : RecordingResult()
         data class Stopped(val filePath: String, val durationMs: Long) : RecordingResult()
         data class Error(val message: String) : RecordingResult()
     }
-    
+
     fun startRecording(): Flow<RecordingResult> = callbackFlow {
         if (isRecording) {
             trySend(RecordingResult.Error("Already recording"))
             close()
             return@callbackFlow
         }
-        
+
+        recordingChannel = this
+
         try {
-            // Create audio file
             audioFile = createAudioFile()
-            
-            // Initialize MediaRecorder
+
             mediaRecorder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 MediaRecorder(context)
             } else {
@@ -42,24 +44,22 @@ class UniversalAudioRecorder(private val context: Context) {
                 MediaRecorder()
             }.apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
                 setOutputFile(audioFile?.absolutePath)
-                
-                // Set audio quality settings for better compatibility
-                setAudioSamplingRate(8000)
-                setAudioEncodingBitRate(12200)
+                setAudioSamplingRate(44100)
+                setAudioEncodingBitRate(128000)
             }
-            
+
             mediaRecorder?.prepare()
             mediaRecorder?.start()
-            
+
             isRecording = true
-            val _startTime = System.currentTimeMillis()
-            
+            startTime = System.currentTimeMillis()
+
             Log.d("UniversalRecorder", "Recording started: ${audioFile?.absolutePath}")
             trySend(RecordingResult.Started)
-            
+
             // Monitor audio levels
             while (isRecording && mediaRecorder != null) {
                 try {
@@ -73,62 +73,77 @@ class UniversalAudioRecorder(private val context: Context) {
                 } catch (e: Exception) {
                     // Ignore amplitude errors
                 }
-                
-                kotlinx.coroutines.delay(100) // Check every 100ms
+
+                kotlinx.coroutines.delay(100)
             }
-            
+
         } catch (e: IOException) {
             Log.e("UniversalRecorder", "Recording failed", e)
             trySend(RecordingResult.Error("Failed to start recording: ${e.message}"))
+            recordingChannel = null
             close()
         }
-        
+
         awaitClose {
-            stopRecording()
+            recordingChannel = null
+            releaseRecorder()
         }
     }
-    
+
     fun stopRecording(): String? {
         if (!isRecording) return null
-        
+
+        isRecording = false
+        val filePath = audioFile?.absolutePath
+        val duration = System.currentTimeMillis() - startTime
+
         try {
-            mediaRecorder?.apply {
-                stop()
-                release()
-            }
-            mediaRecorder = null
-            isRecording = false
-            
-            val filePath = audioFile?.absolutePath
-            Log.d("UniversalRecorder", "Recording stopped: $filePath")
-            
+            releaseRecorder()
+            Log.d("UniversalRecorder", "Recording stopped: $filePath, duration: ${duration}ms")
+
+            recordingChannel?.trySend(RecordingResult.Stopped(filePath ?: "", duration))
+            recordingChannel?.close()
+            recordingChannel = null
+
             return filePath
-            
+
         } catch (e: Exception) {
             Log.e("UniversalRecorder", "Error stopping recording", e)
+            recordingChannel?.close()
+            recordingChannel = null
             return null
         }
     }
-    
+
+    private fun releaseRecorder() {
+        try {
+            mediaRecorder?.stop()
+        } catch (e: Exception) {
+            Log.w("UniversalRecorder", "Error stopping media recorder", e)
+        }
+        try {
+            mediaRecorder?.release()
+        } catch (e: Exception) {
+            Log.w("UniversalRecorder", "Error releasing media recorder", e)
+        }
+        mediaRecorder = null
+    }
+
     private fun createAudioFile(): File {
-        val storageDir = File(context.getExternalFilesDir(Environment.DIRECTORY_MUSIC), "Secretari")
+        // Prefer external storage; fall back to internal storage (important for emulator)
+        val baseDir = context.getExternalFilesDir(null) ?: context.filesDir
+        val storageDir = File(baseDir, "Secretari")
         if (!storageDir.exists()) {
             storageDir.mkdirs()
         }
-        
+
         val timeStamp = System.currentTimeMillis()
-        return File(storageDir, "recording_$timeStamp.3gp")
+        return File(storageDir, "recording_$timeStamp.m4a")
     }
-    
+
     fun isRecording(): Boolean = isRecording
-    
+
     fun getRecordingDuration(): Long {
-        // This is a simplified duration calculation
-        // In a real implementation, you'd track the start time
-        return if (isRecording) {
-            System.currentTimeMillis() - System.currentTimeMillis() // Placeholder
-        } else {
-            0
-        }
+        return if (isRecording) System.currentTimeMillis() - startTime else 0L
     }
 }

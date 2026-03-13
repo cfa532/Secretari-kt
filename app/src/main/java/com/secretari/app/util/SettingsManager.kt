@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.secretari.app.data.model.AppConstants
 import com.secretari.app.data.model.Settings
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.encodeToString
@@ -46,18 +47,17 @@ class SettingsManager(context: Context) {
     
     @OptIn(InternalSerializationApi::class)
     suspend fun getSettings(): Settings {
-        var settings = AppConstants.DEFAULT_SETTINGS
-        context.dataStore.data.collect { preferences ->
-            val settingsJson = preferences[settingsKey]
-            if (settingsJson != null) {
-                try {
-                    settings = Json.decodeFromString(settingsJson)
-                } catch (e: Exception) {
-                    settings = AppConstants.DEFAULT_SETTINGS
-                }
+        val preferences = context.dataStore.data.first()
+        val settingsJson = preferences[settingsKey]
+        return if (settingsJson != null) {
+            try {
+                Json.decodeFromString(settingsJson)
+            } catch (e: Exception) {
+                AppConstants.DEFAULT_SETTINGS
             }
+        } else {
+            AppConstants.DEFAULT_SETTINGS
         }
-        return settings
     }
     
     companion object {

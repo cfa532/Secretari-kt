@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/cfa532/Documents/GitHub/Secretari/Secretari/Model/**)",
+      "Read(//Users/cfa532/Documents/GitHub/Secretari/Secretari/Utilities/**)",
+      "Bash(./gradlew compileDebugKotlin)"
+    ]
+  }
+}

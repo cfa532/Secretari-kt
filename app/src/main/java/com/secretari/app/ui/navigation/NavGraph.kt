@@ -114,12 +114,18 @@ fun NavGraph(
                     viewModel.stopRecording()
                 },
                 onSendToAI = { text ->
-                    // Use existing record if available, otherwise create new one
-                    val record = currentRecord ?: AudioRecord(
-                        transcript = text,
-                        locale = settings.selectedLocale
-                    )
-                    viewModel.sendToAI(text, record, "") // Empty prompt = use default prompt from settings
+                    val record = currentRecord
+                    if (record != null) {
+                        // Regenerate: clear existing summary and re-process
+                        viewModel.regenerateRecord(record)
+                    } else {
+                        // New record
+                        val newRecord = AudioRecord(
+                            transcript = text,
+                            locale = settings.selectedLocale
+                        )
+                        viewModel.sendToAI(text, newRecord, "")
+                    }
                 },
                 onBack = {
                     navController.popBackStack()

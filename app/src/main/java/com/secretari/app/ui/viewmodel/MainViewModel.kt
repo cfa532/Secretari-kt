@@ -9,13 +9,13 @@ import androidx.lifecycle.viewModelScope
 import com.secretari.app.data.database.AppDatabase
 import com.secretari.app.data.model.AppConstants
 import com.secretari.app.data.model.AudioRecord
+import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.Settings
 import com.secretari.app.data.model.User
 import com.secretari.app.data.network.ServerStatusResponse
 import com.secretari.app.data.network.WebSocketClient
 import com.secretari.app.data.repository.AudioRecordRepository
 import com.secretari.app.service.RealtimeSpeechRecognition
-import com.secretari.app.service.SpeechRecognitionService
 import com.secretari.app.service.UniversalAudioRecorder
 import com.secretari.app.util.SettingsManager
 import com.secretari.app.util.UserManager
@@ -34,7 +34,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AudioRecordRepository(database.audioRecordDao())
     private val settingsManager = SettingsManager.getInstance(application)
     private val userManager = UserManager.getInstance(application)
-    private val speechRecognitionService = SpeechRecognitionService(application)
     private val universalAudioRecorder = UniversalAudioRecorder(application)
     private val realtimeSpeechRecognition = RealtimeSpeechRecognition(application)
     private val webSocketClient = WebSocketClient()
@@ -164,62 +163,48 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 _isRecording.value = true
                 _isListening.value = false
+                _transcript.value = ""
                 _audioFilePath.value = null
                 _audioLevel.value = -60f
                 _errorMessage.value = null
-                _currentRecord.value = null // Clear current record when starting new recording
+                _currentRecord.value = null
                 
                 Log.d("MainViewModel", "Starting recording with locale: $locale")
-                Log.d("MainViewModel", "State: isRecording=${_isRecording.value}, isListening=${_isListening.value}, audioFilePath=${_audioFilePath.value}")
-                
-                         Log.d("MainViewModel", "About to call startRealtimeRecognition")
-                         val recognitionFlow = try {
-                             realtimeSpeechRecognition.startRealtimeRecognition(locale)
-                         } catch (e: Exception) {
-                             Log.e("MainViewModel", "Exception creating recognition flow: ${e.message}", e)
-                             _errorMessage.value = "Failed to create recognition flow: ${e.message}"
-                             startAudioRecordingFallback()
-                             return@launch
-                         }
-                         Log.d("MainViewModel", "Got recognition flow, starting collection")
-                         Log.d("MainViewModel", "Flow created successfully, about to collect")
-                
+
+                val recognitionFlow = try {
+                    realtimeSpeechRecognition.startRealtimeRecognition(locale)
+                } catch (e: Exception) {
+                    Log.e("MainViewModel", "Exception creating recognition flow: ${e.message}", e)
+                    _errorMessage.value = "Failed to create recognition flow: ${e.message}"
+                    startAudioRecordingFallback()
+                    return@launch
+                }
+
                 // Use withTimeout to ensure fallback if speech recognition hangs
                 try {
-                       kotlinx.coroutines.withTimeout(1800000) { // 30 minute timeout
-                        Log.d("MainViewModel", "Starting flow collection with timeout...")
+                    kotlinx.coroutines.withTimeout(1800000) { // 30 minute timeout
                         recognitionFlow.collect { result ->
-                            Log.d("MainViewModel", "Received result: $result")
                             when (result) {
                                 is RealtimeSpeechRecognition.RecognitionResult.Ready -> {
-                                    Log.d("MainViewModel", "Speech recognition ready")
+                                    _isListening.value = true
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.Listening -> {
-                                    Log.d("MainViewModel", "Speech recognition listening")
                                     _isListening.value = true
-                                    Log.d("MainViewModel", "State after listening: isListening=${_isListening.value}")
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.PartialText -> {
-                                    Log.d("MainViewModel", "Partial text: ${result.text}")
                                     _transcript.value = result.text
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.FinalText -> {
                                     Log.d("MainViewModel", "Final text: ${result.text}")
-                                    _transcript.value += result.text + " "
-                                    _isListening.value = false
+                                    _transcript.value += result.text + "\n"
                                 }
-                                        is RealtimeSpeechRecognition.RecognitionResult.Error -> {
-                                            Log.e("MainViewModel", "Speech recognition error: ${result.message}")
-                                            _errorMessage.value = result.message
-                                            _isListening.value = false
-                                            Log.d("MainViewModel", "State after error: isListening=${_isListening.value}, errorMessage=${_errorMessage.value}")
-                                            
-                                            // Show toast message to user
-                                            Toast.makeText(getApplication<Application>(), "Speech recognition failed: ${result.message}", Toast.LENGTH_LONG).show()
-                                            
-                                            // Always fall back to audio recording when speech recognition fails
-                                            startAudioRecordingFallback()
-                                        }
+                                is RealtimeSpeechRecognition.RecognitionResult.Error -> {
+                                    Log.e("MainViewModel", "Speech recognition error: ${result.message}")
+                                    _errorMessage.value = result.message
+                                    _isListening.value = false
+                                    Toast.makeText(getApplication<Application>(), "Speech recognition failed: ${result.message}", Toast.LENGTH_LONG).show()
+                                    startAudioRecordingFallback()
+                                }
                             }
                         }
                     }
@@ -271,18 +256,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             universalAudioRecorder.startRecording().collect { result ->
                 when (result) {
                     is UniversalAudioRecorder.RecordingResult.Started -> {
-                        Log.d("MainViewModel", "Audio recording started successfully")
-                        _isListening.value = true  // Set listening to true for audio recording
-                        Log.d("MainViewModel", "Fallback state: isRecording=${_isRecording.value}, isListening=${_isListening.value}, audioFilePath=${_audioFilePath.value}")
+                        _isListening.value = true
                     }
-                             is UniversalAudioRecorder.RecordingResult.AudioLevel -> {
-                                 _audioLevel.value = result.level
-                             }
+                    is UniversalAudioRecorder.RecordingResult.AudioLevel -> {
+                        _audioLevel.value = result.level
+                    }
                     is UniversalAudioRecorder.RecordingResult.Stopped -> {
                         Log.d("MainViewModel", "Audio recording stopped, file: ${result.filePath}")
                         _audioFilePath.value = result.filePath
                         _isRecording.value = false
-                        Log.d("MainViewModel", "Final state: audioFilePath=${_audioFilePath.value}, isRecording=${_isRecording.value}")
                     }
                     is UniversalAudioRecorder.RecordingResult.Error -> {
                         Log.e("MainViewModel", "Audio recording error: ${result.message}")
@@ -334,7 +316,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // Don't create AudioRecord if there's no transcript
         }
     }
-    
+
     @OptIn(InternalSerializationApi::class)
     fun sendToAI(rawText: String, record: AudioRecord, prompt: String = "") {
         viewModelScope.launch {
@@ -373,27 +355,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     is WebSocketClient.WebSocketMessage.Result -> {
                         Log.d("MainViewModel", "Received result: eof=${message.eof}, answer=${message.answer}")
-                        
+
                         // Only create and save AudioRecord when eof=true (final chunk)
                         if (message.eof) {
                             // Use only the answer from result message as the final summary
                             val finalSummary = message.answer
-                            
+
                             // Update the existing record with AI result
                             record.resultFromAI(AudioRecord.TaskType.SUMMARIZE, finalSummary, currentSettings)
-                            
+
                             viewModelScope.launch {
                                 repository.update(record)
                                 Log.d("MainViewModel", "AudioRecord updated with AI summary: $finalSummary")
+
+                                // Update user balance and token count (like iOS)
+                                val currentUser = userManager.getUser()
+                                if (currentUser != null) {
+                                    val updatedUser = currentUser.copy(
+                                        dollarBalance = currentUser.dollarBalance - message.cost,
+                                        tokenCount = currentUser.tokenCount + message.tokens
+                                    )
+                                    userManager.persistUser(updatedUser)
+                                    Log.d("MainViewModel", "User balance updated: cost=${message.cost}, tokens=${message.tokens}")
+                                }
                             }
-                            
+
                             // Clear streaming and show final result
                             _isStreaming.value = false
                             _streamedText.value = ""
-                            
+
                             // Set the final record to show the result
                             _currentRecord.value = record
-                            
+
                             webSocketClient.disconnect()
                         } else {
                             // For non-final chunks, accumulate the answer (this shouldn't happen in current backend)
@@ -440,7 +433,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repository.delete(record)
         }
     }
-    
+
+    /**
+     * Clears existing summary/memo and regenerates from transcript (matching iOS behavior).
+     */
+    @OptIn(InternalSerializationApi::class)
+    fun regenerateRecord(record: AudioRecord) {
+        viewModelScope.launch {
+            val currentSettings = settings.firstOrNull() ?: AppConstants.DEFAULT_SETTINGS
+            // Clear existing content before regenerating (like iOS does)
+            if (currentSettings.promptType == PromptType.CHECKLIST) {
+                record.memo = emptyList()
+            } else {
+                record.summary = emptyMap()
+            }
+            record.locale = currentSettings.selectedLocale
+            repository.update(record)
+            _currentRecord.value = record
+            sendToAI(record.transcript, record, "")
+        }
+    }
+
     fun selectRecord(record: AudioRecord) {
         _currentRecord.value = record
         // Clear recording states when viewing an existing record (only if we're not currently recording)
@@ -595,7 +608,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     override fun onCleared() {
         super.onCleared()
-        speechRecognitionService.stopRecognition()
         universalAudioRecorder.stopRecording()
         realtimeSpeechRecognition.stopRecognition()
         webSocketClient.disconnect()

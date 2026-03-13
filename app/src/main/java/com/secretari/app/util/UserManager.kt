@@ -73,13 +73,14 @@ class UserManager(private val context: Context) {
     suspend fun createTempUser(): User? {
         val deviceId = identifierManager.getDeviceIdentifier()
         android.util.Log.d("UserManager", "Creating temp user with device ID: $deviceId")
+        val password = "zaq1^WSX"
         val tempUser = User(
             id = deviceId,
             username = deviceId,
-            password = "zaq1^WSX",
+            password = password,
             dollarBalance = 0.2 // Signup bonus like iOS
         )
-        
+
         return try {
             val response = apiService.createTempUser(
                 TempUserRequest(
@@ -88,12 +89,12 @@ class UserManager(private val context: Context) {
                     id = tempUser.id
                 )
             )
-            
+
             if (response.isSuccessful) {
                 val body = response.body()
                 userToken = body?.token?.access_token
                 android.util.Log.d("UserManager", "Temp user created successfully, token: ${userToken?.take(10)}")
-                
+
                 val user = body?.user?.let {
                     User(
                         id = it.id,
@@ -103,14 +104,29 @@ class UserManager(private val context: Context) {
                         monthlyUsage = it.monthly_usage
                     )
                 }
-                android.util.Log.d("UserManager", "Created user with username: '${user?.username}' (length: ${user?.username?.length})")
                 user?.let { persistUser(it) }
                 user
             } else {
-                android.util.Log.e("UserManager", "Failed to create temp user, response code: ${response.code()}")
-                null
+                // User may already exist on server (like iOS fallback to fetchToken)
+                android.util.Log.d("UserManager", "createTempUser returned ${response.code()}, attempting fetchToken")
+                val tokenResponse = apiService.fetchToken(deviceId, password)
+                if (tokenResponse.isSuccessful) {
+                    userToken = tokenResponse.body()?.access_token
+                    android.util.Log.d("UserManager", "Token refreshed for existing temp user")
+                    // Return existing local user or create a minimal one
+                    val existingUser = getUser()
+                    existingUser ?: run {
+                        val user = tempUser.copy(password = "")
+                        persistUser(user)
+                        user
+                    }
+                } else {
+                    android.util.Log.e("UserManager", "fetchToken fallback also failed: ${tokenResponse.code()}")
+                    null
+                }
             }
         } catch (e: Exception) {
+            android.util.Log.e("UserManager", "Error in createTempUser", e)
             null
         }
     }
@@ -295,7 +311,13 @@ class UserManager(private val context: Context) {
                     createTempUser() != null
                 } else {
                     android.util.Log.d("UserManager", "Existing user found: ${existingUser.username}")
-                    true
+                    // Ensure we have a valid token (like iOS does on init)
+                    if (userToken == null) {
+                        android.util.Log.d("UserManager", "No token found for existing user, refreshing...")
+                        createTempUser() != null
+                    } else {
+                        true
+                    }
                 }
             }
         } catch (e: Exception) {
