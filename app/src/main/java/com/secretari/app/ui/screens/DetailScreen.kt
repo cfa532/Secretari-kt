@@ -62,6 +62,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -266,24 +267,26 @@ fun DetailScreen(
                             }
                         }
 
-                        if (settings.promptType == PromptType.CHECKLIST) {
-                            ChecklistView(
-                                record = it,
-                                onToggleItem = { itemId ->
-                                    onToggleChecklistItem(itemId)
-                                },
-                                onEditItem = { itemId, newText ->
-                                    onEditChecklistItem(itemId, newText)
-                                },
-                                onAddItem = {
-                                    onAddChecklistItem()
-                                },
-                                onRemoveItem = { itemId ->
-                                    onRemoveChecklistItem(itemId)
-                                }
-                            )
-                        } else {
-                            SummaryView(record = it, settings = settings, onEditSummary = onEditSummary)
+                        key(it.locale) {
+                            if (settings.promptType == PromptType.CHECKLIST) {
+                                ChecklistView(
+                                    record = it,
+                                    onToggleItem = { itemId ->
+                                        onToggleChecklistItem(itemId)
+                                    },
+                                    onEditItem = { itemId, newText ->
+                                        onEditChecklistItem(itemId, newText)
+                                    },
+                                    onAddItem = {
+                                        onAddChecklistItem()
+                                    },
+                                    onRemoveItem = { itemId ->
+                                        onRemoveChecklistItem(itemId)
+                                    }
+                                )
+                            } else {
+                                SummaryView(record = it, settings = settings, onEditSummary = onEditSummary)
+                            }
                         }
                     }
                 }
@@ -680,7 +683,7 @@ fun ChecklistView(
 fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_SETTINGS, onEditSummary: (String) -> Unit = {}) {
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
     val summaryText = record.summary[record.locale] ?: "No summary available. Try to regenerate summary."
-    var editedSummary by remember { mutableStateOf(summaryText) }
+    var editedSummary by remember(record.locale) { mutableStateOf(summaryText) }
     val hasChanges = editedSummary != summaryText
     
     LazyColumn(modifier = Modifier.padding(16.dp)) {
