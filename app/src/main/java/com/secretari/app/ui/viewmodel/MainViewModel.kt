@@ -595,14 +595,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 com.secretari.app.data.model.RecognizerLocale.KOREAN -> "다음 텍스트를 한국어로 번역하세요. 일반 텍스트로 내보내세요."
             }
             
-            // Create a new record for translation
-            val translationRecord = AudioRecord(
-                transcript = sourceText,
-                locale = targetLocale
-            )
-            
-            // Send to AI for translation
-            sendToAI(sourceText, translationRecord, translationPrompt)
+            // Update the existing record's locale to target (like iOS)
+            record.locale = targetLocale
+
+            // Send to AI for translation using the existing record
+            sendToAI(sourceText, record, translationPrompt)
         }
     }
     

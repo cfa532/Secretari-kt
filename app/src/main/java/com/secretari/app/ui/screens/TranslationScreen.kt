@@ -35,6 +35,7 @@ import com.secretari.app.data.model.RecognizerLocale
 fun TranslationScreen(
     record: AudioRecord?,
     isStreaming: Boolean,
+    hasStartedStreaming: Boolean = false,
     streamedText: String,
     onBack: () -> Unit,
     onTranslate: (RecognizerLocale) -> Unit,
@@ -62,8 +63,8 @@ fun TranslationScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (isStreaming) {
-                // Show streaming view
+            if (isStreaming || hasStartedStreaming) {
+                // Show streaming view (keep showing even after streaming ends to avoid flicker before navigation)
                 StreamingTranslationView(streamedText = streamedText)
             } else {
                 // Show language selection

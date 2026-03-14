@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -211,6 +214,13 @@ fun NavGraph(
                     viewModel.stopRecording()
                     viewModel.startRecording(locale.code)
                 },
+                onDisplayLocaleChange = { locale ->
+                    currentRecord?.let { record ->
+                        val updatedRecord = record.copy(locale = locale)
+                        viewModel.updateRecord(updatedRecord)
+                        viewModel.selectRecord(updatedRecord)
+                    }
+                },
                 isListening = isListening,
                 audioLevel = audioLevel,
                 audioFilePath = audioFilePath,
@@ -219,9 +229,14 @@ fun NavGraph(
         }
         
         composable(Screen.Translation.route) {
-            // Handle navigation back to DetailScreen when translation is complete
+            // Track whether streaming has started so we only auto-navigate back
+            // after translation completes, not on initial load
+            var hasStartedStreaming by remember { mutableStateOf(false) }
+
             LaunchedEffect(isStreaming) {
-                if (!isStreaming && streamedText.isEmpty() && currentRecord != null) {
+                if (isStreaming) {
+                    hasStartedStreaming = true
+                } else if (hasStartedStreaming && streamedText.isEmpty() && currentRecord != null) {
                     // Translation completed, navigate back to DetailScreen
                     navController.popBackStack()
                 }
@@ -230,6 +245,7 @@ fun NavGraph(
             TranslationScreen(
                 record = currentRecord,
                 isStreaming = isStreaming,
+                hasStartedStreaming = hasStartedStreaming,
                 streamedText = streamedText,
                 onBack = {
                     navController.popBackStack()

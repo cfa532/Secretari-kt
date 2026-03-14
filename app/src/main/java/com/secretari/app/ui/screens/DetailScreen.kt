@@ -29,6 +29,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -103,6 +104,7 @@ fun DetailScreen(
     onAddChecklistItem: () -> Unit = {},
     onRemoveChecklistItem: (Int) -> Unit = {},
     onLocaleChange: (RecognizerLocale) -> Unit,
+    onDisplayLocaleChange: (RecognizerLocale) -> Unit = {},
     isListening: Boolean = false,
     audioLevel: Float = -60f,
     audioFilePath: String? = null,
@@ -111,6 +113,7 @@ fun DetailScreen(
     var showMenu by remember { mutableStateOf(false) }
     var showRegenerateDialog by remember { mutableStateOf(false) }
     var showEditTranscriptDialog by remember { mutableStateOf(false) }
+    var showLocalePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val settings by viewModel.settings.collectAsState(initial = com.secretari.app.data.model.AppConstants.DEFAULT_SETTINGS)
     
@@ -225,6 +228,44 @@ fun DetailScreen(
                 }
                 else -> {
                     record?.let {
+                        // Locale picker - like iOS LocalePicker, shown when multiple translations exist
+                        val availableLocales = if (settings.promptType == PromptType.CHECKLIST && it.memo.isNotEmpty()) {
+                            it.memo.firstOrNull()?.title?.keys?.sorted()?.toList() ?: emptyList()
+                        } else if (it.summary.isNotEmpty()) {
+                            it.summary.keys.sorted().toList()
+                        } else {
+                            emptyList()
+                        }
+                        if (availableLocales.size >= 2) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Box {
+                                    TextButton(onClick = { showLocalePicker = true }) {
+                                        Text(it.locale.name)
+                                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                                    }
+                                    DropdownMenu(
+                                        expanded = showLocalePicker,
+                                        onDismissRequest = { showLocalePicker = false }
+                                    ) {
+                                        availableLocales.forEach { locale ->
+                                            DropdownMenuItem(
+                                                text = { Text(locale.name) },
+                                                onClick = {
+                                                    showLocalePicker = false
+                                                    onDisplayLocaleChange(locale)
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         if (settings.promptType == PromptType.CHECKLIST) {
                             ChecklistView(
                                 record = it,
