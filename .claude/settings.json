@@ -3,7 +3,8 @@
     "allow": [
       "Read(//Users/cfa532/Documents/GitHub/Secretari/Secretari/Model/**)",
       "Read(//Users/cfa532/Documents/GitHub/Secretari/Secretari/Utilities/**)",
-      "Bash(./gradlew compileDebugKotlin)"
+      "Bash(./gradlew compileDebugKotlin)",
+      "Read(//Users/cfa532/Documents/GitHub/Secretari/**)"
     ]
   }
 }
