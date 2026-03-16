@@ -26,10 +26,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.secretari.app.data.model.AudioRecord
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
 import com.secretari.app.ui.screens.AccountScreen
 import com.secretari.app.ui.screens.DetailScreen
 import com.secretari.app.ui.screens.MainScreen
 import com.secretari.app.ui.screens.SettingsScreen
+import com.secretari.app.ui.screens.StoreScreen
 import com.secretari.app.ui.screens.TranslationScreen
 import com.secretari.app.ui.viewmodel.MainViewModel
 import kotlinx.serialization.InternalSerializationApi
@@ -311,9 +314,22 @@ fun NavGraph(
         }
         
         composable(Screen.Store.route) {
-            // Placeholder for Store screen
-            PlaceholderScreen(
-                title = "Store",
+            val products by viewModel.billingManager.products.collectAsState()
+            val purchaseState by viewModel.billingManager.purchaseState.collectAsState()
+            val activity = LocalContext.current as Activity
+
+            // Ensure products are loaded when Store screen opens
+            LaunchedEffect(Unit) {
+                viewModel.billingManager.ensureProductsLoaded()
+            }
+
+            StoreScreen(
+                user = currentUser,
+                products = products,
+                purchaseState = purchaseState,
+                onPurchase = { productDetails ->
+                    viewModel.launchPurchase(activity, productDetails)
+                },
                 onBack = { navController.popBackStack() }
             )
         }

@@ -28,7 +28,7 @@ android {
         applicationId = "com.secretari.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
+        versionCode = 7
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -113,6 +113,9 @@ dependencies {
 
     // Security/Encryption
     implementation("androidx.security:security-crypto:1.1.0")
+
+    // Google Play Billing
+    implementation("com.android.billingclient:billing-ktx:7.1.1")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

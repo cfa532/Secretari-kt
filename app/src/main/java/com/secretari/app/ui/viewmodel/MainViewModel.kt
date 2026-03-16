@@ -17,8 +17,10 @@ import com.secretari.app.data.network.WebSocketClient
 import com.secretari.app.data.repository.AudioRecordRepository
 import com.secretari.app.service.RealtimeSpeechRecognition
 import com.secretari.app.service.UniversalAudioRecorder
+import com.secretari.app.util.BillingManager
 import com.secretari.app.util.SettingsManager
 import com.secretari.app.util.UserManager
+import android.app.Activity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +39,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val universalAudioRecorder = UniversalAudioRecorder(application)
     private val realtimeSpeechRecognition = RealtimeSpeechRecognition(application)
     private val webSocketClient = WebSocketClient()
+    val billingManager = BillingManager.getInstance(application)
     
     val allRecords: Flow<List<AudioRecord>> = repository.allRecords
     @OptIn(InternalSerializationApi::class)
@@ -86,6 +89,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         initializeUserAccount()
         observeUserChanges()
+        billingManager.startConnection()
+        observePurchases()
     }
     
     @OptIn(InternalSerializationApi::class)
@@ -603,11 +608,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    @OptIn(InternalSerializationApi::class)
+    private fun observePurchases() {
+        viewModelScope.launch {
+            billingManager.purchaseState.collect { state ->
+                if (state is BillingManager.PurchaseState.Success) {
+                    // Client-side balance update (matching iOS behavior)
+                    val currentUser = userManager.getUser()
+                    if (currentUser != null && state.price > 0) {
+                        val updatedUser = currentUser.copy(
+                            dollarBalance = currentUser.dollarBalance + state.price
+                        )
+                        userManager.persistUser(updatedUser)
+                        Log.d("MainViewModel", "Purchase success: added $${state.price} to balance, new balance=${updatedUser.dollarBalance}")
+                    }
+                }
+            }
+        }
+    }
+
+    fun launchPurchase(activity: Activity, productDetails: com.android.billingclient.api.ProductDetails) {
+        billingManager.launchPurchaseFlow(activity, productDetails)
+    }
+
     override fun onCleared() {
         super.onCleared()
         universalAudioRecorder.stopRecording()
         realtimeSpeechRecognition.stopRecognition()
         webSocketClient.disconnect()
+        billingManager.endConnection()
     }
 }
 

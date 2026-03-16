@@ -34,7 +34,7 @@ interface ApiService {
     suspend fun createTempUser(@Body request: TempUserRequest): Response<TempUserResponse>
     
     @GET("secretari/productids")
-    suspend fun getProductIDs(): Response<Map<String, Double>>
+    suspend fun getProductIDs(): Response<Map<String, ProductIDsData>>
     
     @GET("secretari/notice")
     suspend fun getNotice(): Response<String>
@@ -156,6 +156,10 @@ data class ServerStatusResponse(
     val server_maintenance: String,
     val max_token_limits: Map<String, Int>,
     val error: String? = null
+)
+
+data class ProductIDsData(
+    val productIDs: Map<String, Double>
 )
 
 
