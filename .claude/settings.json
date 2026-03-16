@@ -4,7 +4,14 @@
       "Read(//Users/cfa532/Documents/GitHub/Secretari/Secretari/Model/**)",
       "Read(//Users/cfa532/Documents/GitHub/Secretari/Secretari/Utilities/**)",
       "Bash(./gradlew compileDebugKotlin)",
-      "Read(//Users/cfa532/Documents/GitHub/Secretari/**)"
+      "Read(//Users/cfa532/Documents/GitHub/Secretari/**)",
+      "Read(//Users/cfa532/Documents/GitHub/Tweet/app/src/main/java/**)",
+      "Read(//Users/cfa532/Documents/GitHub/Tweet/**)",
+      "Bash(./gradlew assembleDebug)",
+      "Bash(adb install:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/cfa532/Documents/GitHub/Tweet/app/src/main/java/us/fireshare/tweet/widget"
     ]
   }
 }
