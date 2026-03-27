@@ -153,8 +153,9 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
             .setProductList(productList)
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
+        billingClient.queryProductDetailsAsync(params) { billingResult, queryProductDetailsResult ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                val productDetailsList = queryProductDetailsResult.productDetailsList
                 _products.value = productDetailsList.sortedByDescending { it.productId }
                 for (details in productDetailsList) {
                     Log.d(TAG, "Product loaded: ${details.productId} - ${details.oneTimePurchaseOfferDetails?.formattedPrice}")
