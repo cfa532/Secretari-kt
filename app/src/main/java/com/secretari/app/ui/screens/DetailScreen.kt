@@ -342,6 +342,23 @@ fun DetailScreen(
         }
     }
     
+    // Show error dialog when recording stops with no speech recognized or recording fails
+    if (!isRecording && !isStreaming && record == null && errorMessage != null) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Recording Failed") },
+            text = { Text(errorMessage) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.clearError()
+                    onBack()
+                }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
     if (showRegenerateDialog) {
         AlertDialog(
             onDismissRequest = { showRegenerateDialog = false },

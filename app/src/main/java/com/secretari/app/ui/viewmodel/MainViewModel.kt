@@ -286,6 +286,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         Log.d("MainViewModel", "Stopping recording...")
         _isRecording.value = false
         _isListening.value = false
+        _errorMessage.value = null
         realtimeSpeechRecognition.stopRecognition()
         val filePath = universalAudioRecorder.stopRecording()
         if (filePath != null) {
