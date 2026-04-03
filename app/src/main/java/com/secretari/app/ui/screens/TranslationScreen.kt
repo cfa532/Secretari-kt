@@ -26,7 +26,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.secretari.app.R
 import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.RecognizerLocale
 
@@ -44,15 +46,15 @@ fun TranslationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Translation") },
+                title = { Text(stringResource(R.string.translation)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.Default.ArrowBack, stringResource(R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = onShare) {
-                        Icon(Icons.Default.Share, "Share")
+                        Icon(Icons.Default.Share, stringResource(R.string.share))
                     }
                 }
             )
@@ -64,10 +66,8 @@ fun TranslationScreen(
                 .padding(padding)
         ) {
             if (isStreaming || hasStartedStreaming) {
-                // Show streaming view (keep showing even after streaming ends to avoid flicker before navigation)
                 StreamingTranslationView(streamedText = streamedText)
             } else {
-                // Show language selection
                 LanguageSelectionView(
                     record = record,
                     onTranslate = onTranslate
@@ -79,6 +79,9 @@ fun TranslationScreen(
 
 @Composable
 fun StreamingTranslationView(streamedText: String) {
+    val waitingForAiStr = stringResource(R.string.waiting_for_ai)
+    val translationLabel = stringResource(R.string.translation) + ":"
+
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -86,9 +89,9 @@ fun StreamingTranslationView(streamedText: String) {
         ) {
             PulsingDot()
             Spacer(modifier = Modifier.width(8.dp))
-            Text("AI is translating...", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.ai_translating), style = MaterialTheme.typography.bodyMedium)
         }
-        
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -101,12 +104,12 @@ fun StreamingTranslationView(streamedText: String) {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Translation:",
+                    text = translationLabel,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                
+
                 LazyColumn(
                     modifier = Modifier.heightIn(max = 300.dp)
                 ) {
@@ -115,12 +118,10 @@ fun StreamingTranslationView(streamedText: String) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = streamedText.ifEmpty { "Waiting for AI response..." },
+                                text = streamedText.ifEmpty { waitingForAiStr },
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            
-                            // Show typing cursor when streaming
                             if (streamedText.isNotEmpty()) {
                                 Text(
                                     text = "|",
@@ -144,13 +145,12 @@ fun LanguageSelectionView(
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text(
-            text = "Select one of the following languages to translate the Summary. If summary exists, it will be overwritten.",
+            text = stringResource(R.string.select_translation_language),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 24.dp)
         )
-        
-        // Language buttons
+
         val languages = listOf(
             RecognizerLocale.ENGLISH to "English",
             RecognizerLocale.CHINESE to "中文",
@@ -162,7 +162,7 @@ fun LanguageSelectionView(
             RecognizerLocale.SPANISH to "Español🇪🇸",
             RecognizerLocale.KOREAN to "한국인🇰🇷"
         )
-        
+
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -178,4 +178,3 @@ fun LanguageSelectionView(
         }
     }
 }
-

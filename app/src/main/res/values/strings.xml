@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Secretari</string>
-    
+
     <!-- Main Screen -->
     <string name="records">Records</string>
     <string name="no_records">No records</string>
@@ -9,7 +9,10 @@
     <string name="stop">Stop</string>
     <string name="push_start_button">Push the START button to record your own speech. A summary will be generated automatically after STOP button is pushed.</string>
     <string name="select_language_warning">First make sure to select the right language for recognition in settings ⚙️ Otherwise the built-in speech recognizer cannot work properly.</string>
-    
+    <string name="low_balance">Low Balance</string>
+    <string name="low_balance_message">Please register an account or recharge to continue using premium features.</string>
+    <string name="recharge">Recharge</string>
+
     <!-- Menu -->
     <string name="settings">Settings</string>
     <string name="account">Account</string>
@@ -17,26 +20,52 @@
     <string name="register">Register</string>
     <string name="purchase">Purchase</string>
     <string name="help">Help</string>
-    
+
     <!-- Detail Screen -->
     <string name="summary">Summary</string>
     <string name="transcript">Transcript</string>
     <string name="translation">Translation</string>
+    <string name="translate">Translate</string>
     <string name="share">Share</string>
     <string name="regenerate">Regenerate</string>
     <string name="recognizing">Recognizing</string>
     <string name="streaming_from_ai">Streaming from AI</string>
     <string name="no_summary">No summary. Try to regenerate summary</string>
-    
+    <string name="original_transcript">Original Transcript</string>
+    <string name="recording_failed">Recording Failed</string>
+    <string name="recognized_text">Recognized Text:</string>
+    <string name="generated_summary">Generated Summary:</string>
+    <string name="ai_generating_summary">AI is generating summary…</string>
+    <string name="enter_summary">Enter summary…</string>
+    <string name="enter_transcript">Enter the corrected transcript…</string>
+    <string name="add_new_item">Add new item</string>
+    <string name="waiting_for_ai">Waiting for AI response…</string>
+
+    <!-- Recording status -->
+    <string name="receiving">Receiving…</string>
+    <string name="listening">Listening…</string>
+    <string name="recording_audio">Recording audio…</string>
+    <string name="starting">Starting…</string>
+    <string name="error_prefix">Error: %s</string>
+
     <!-- Settings -->
     <string name="recognition">Recognition</string>
     <string name="language">Language</string>
     <string name="ai_settings">AI Settings</string>
     <string name="prompt_type">Prompt Type</string>
     <string name="audio_silence_threshold">Audio Silence Threshold</string>
+    <string name="audio_silence_threshold_label">Audio Silence Threshold: %s dB</string>
     <string name="about">About</string>
     <string name="version">Version</string>
-    
+    <string name="advanced">Advanced</string>
+    <string name="silent_timer">Silent Timer</string>
+    <string name="max_work_time">Max Work Time</string>
+    <string name="instruction_text">Instruction Text</string>
+    <string name="select_language">Select Language</string>
+    <string name="select_prompt_type">Select Prompt Type</string>
+    <string name="reset_settings">Reset Settings</string>
+    <string name="reset_settings_warning">Are you sure you want to reset all settings to default values?</string>
+
     <!-- Account -->
     <string name="username">Username</string>
     <string name="password">Password</string>
@@ -46,7 +75,25 @@
     <string name="balance">Balance</string>
     <string name="tokens">Tokens</string>
     <string name="account_information">Account Information</string>
-    
+    <string name="anonymous_user">Anonymous User</string>
+    <string name="token_usage">Token Usage</string>
+    <string name="name">Name</string>
+    <string name="account_balance_usd">Account Balance in USD</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="passwords_do_not_match">Passwords do not match</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="create_account">Create Account</string>
+    <string name="create_account_prompt">Don\'t have an account? Create Account</string>
+    <string name="sign_in_prompt">Have an account? Sign in</string>
+    <string name="sign_in_existing">Sign In to Existing Account</string>
+    <string name="benefits_of_registration">Benefits of Registration</string>
+    <string name="benefit_save_recordings">Save your recordings and summaries</string>
+    <string name="benefit_premium_features">Access premium AI features</string>
+    <string name="benefit_sync_devices">Sync across multiple devices</string>
+    <string name="benefit_backup_data">Backup your data securely</string>
+    <string name="username_validation_error">Username is required and must be less than 20 characters</string>
+    <string name="password_required_error">Password is required</string>
+
     <!-- Alerts -->
     <string name="alert">Alert</string>
     <string name="yes">Yes</string>
@@ -54,16 +101,50 @@
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
     <string name="regenerate_summary_warning">Regenerate summary from the transcript. Existing content will be overwritten.</string>
-    
+    <string name="reset">Reset</string>
+    <string name="save">Save</string>
+    <string name="edit_action">Edit</string>
+    <string name="back">Back</string>
+
     <!-- Errors -->
     <string name="error">Error</string>
     <string name="invalid_access_token">Invalid access token</string>
     <string name="failed_to_register">Failed to register</string>
     <string name="update_failure">Update failure</string>
     <string name="delete_failure">Delete failure</string>
-    
+    <string name="error_failed_to_initialize_account">Failed to initialize user account</string>
+    <string name="error_account_initialization">Account initialization error: %s</string>
+    <string name="error_failed_to_create_recognition_flow">Failed to create recognition flow: %s</string>
+    <string name="error_flow_collection">Flow collection error: %s</string>
+    <string name="error_failed_to_start_recording">Failed to start recording: %s</string>
+    <string name="error_no_speech_recognized">No speech was recognized during the recording session</string>
+    <string name="error_failed_to_authenticate">Failed to authenticate with server</string>
+    <string name="error_no_content_to_translate">No content to translate</string>
+    <string name="error_speech_recognition_unavailable">Speech recognition not available</string>
+    <string name="error_audio_recording">Audio recording error</string>
+    <string name="error_client_side">Client side error</string>
+    <string name="error_insufficient_permissions">Insufficient permissions</string>
+    <string name="error_network">Network error</string>
+    <string name="error_network_timeout">Network timeout</string>
+    <string name="error_no_match">No recognition result matched</string>
+    <string name="error_recognizer_busy">Recognition service busy</string>
+    <string name="error_server">Server error</string>
+    <string name="error_speech_timeout">No speech input</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="toast_speech_recognition_failed">Speech recognition failed: %s</string>
+    <string name="toast_recording_timed_out">Recording timed out after 30 minutes, saving transcript</string>
+
     <!-- Permissions -->
     <string name="permission_required">Permission Required</string>
     <string name="audio_permission_required">Audio recording permission is required to use this app</string>
-</resources>
 
+    <!-- Translation Screen -->
+    <string name="ai_translating">AI is translating…</string>
+    <string name="select_translation_language">Select one of the following languages to translate the Summary. If summary exists, it will be overwritten.</string>
+
+    <!-- Store Screen -->
+    <string name="your_balance">Your Balance</string>
+    <string name="loading_products">Loading products…</string>
+    <string name="purchase_successful">Purchase successful! Balance updated.</string>
+    <string name="store_footer">Each new account includes a complimentary credit.\nPurchase additional tokens when your balance runs low.</string>
+</resources>

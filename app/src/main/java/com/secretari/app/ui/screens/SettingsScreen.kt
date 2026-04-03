@@ -33,8 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.secretari.app.R
 import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.RecognizerLocale
 import com.secretari.app.data.model.Settings
@@ -54,19 +56,19 @@ fun SettingsScreen(
     var isEditingPrompt by remember { mutableStateOf(false) }
     var editedPromptText by remember { mutableStateOf("") }
     var showEditButton by remember { mutableStateOf(false) }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.Default.ArrowBack, stringResource(R.string.back))
                     }
                 },
                 actions = {
                     TextButton(onClick = { showResetDialog = true }) {
-                        Text("Reset")
+                        Text(stringResource(R.string.reset))
                     }
                 }
             )
@@ -80,115 +82,115 @@ fun SettingsScreen(
             LazyColumn(
                 modifier = Modifier.weight(1f)
             ) {
+                item {
+                    SettingsSection(title = stringResource(R.string.ai_settings)) {
+                        SettingsItem(
+                            title = stringResource(R.string.language),
+                            value = currentSettings.selectedLocale.displayName,
+                            onClick = { showLocaleDialog = true }
+                        )
+                        SettingsItem(
+                            title = stringResource(R.string.prompt_type),
+                            value = currentSettings.promptType.name,
+                            onClick = { showPromptTypeDialog = true }
+                        )
 
-            item {
-                SettingsSection(title = "AI Settings") {
-                    SettingsItem(
-                        title = "Language",
-                        value = currentSettings.selectedLocale.displayName,
-                        onClick = { showLocaleDialog = true }
-                    )
-                    SettingsItem(
-                        title = "Prompt Type",
-                        value = currentSettings.promptType.name,
-                        onClick = { showPromptTypeDialog = true }
-                    )
-                    
-                    var audioThreshold by remember { mutableStateOf(currentSettings.audioSilentDB) }
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Audio Silence Threshold: $audioThreshold dB",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Slider(
-                            value = audioThreshold.toFloat(),
-                            onValueChange = { audioThreshold = it.toInt().toString() },
-                            valueRange = -60f..-20f,
-                            onValueChangeFinished = {
-                                currentSettings = currentSettings.copy(audioSilentDB = audioThreshold)
-                                onSettingsChange(currentSettings)
-                            }
-                        )
+                        var audioThreshold by remember { mutableStateOf(currentSettings.audioSilentDB) }
+                        val thresholdLabel = stringResource(R.string.audio_silence_threshold_label, audioThreshold)
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                thresholdLabel,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Slider(
+                                value = audioThreshold.toFloat(),
+                                onValueChange = { audioThreshold = it.toInt().toString() },
+                                valueRange = -60f..-20f,
+                                onValueChangeFinished = {
+                                    currentSettings = currentSettings.copy(audioSilentDB = audioThreshold)
+                                    onSettingsChange(currentSettings)
+                                }
+                            )
+                        }
                     }
                 }
-            }
-            
-            item {
-                SettingsSection(title = "Advanced") {
-                    SettingsItem(
-                        title = "Silent timer",
-                        value = "30 min",
-                        onClick = { }
-                    )
-                    SettingsItem(
-                        title = "Max work time",
-                        value = "8 hr",
-                        onClick = { }
-                    )
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            if (isEditingPrompt) {
-                                OutlinedTextField(
-                                    value = editedPromptText,
-                                    onValueChange = { editedPromptText = it },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    minLines = 3,
-                                    maxLines = 6,
-                                    label = { Text("Instruction Text") }
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    TextButton(
-                                        onClick = {
-                                            isEditingPrompt = false
-                                            editedPromptText = ""
-                                        }
-                                    ) {
-                                        Text("Cancel")
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    TextButton(
-                                        onClick = {
-                                            // Save the custom prompt
-                                            val updatedPrompts = currentSettings.prompt.toMutableMap()
-                                            val localePrompts = updatedPrompts[currentSettings.promptType]?.toMutableMap() ?: mutableMapOf()
-                                            localePrompts[currentSettings.selectedLocale] = editedPromptText
-                                            updatedPrompts[currentSettings.promptType] = localePrompts
-                                            
-                                            currentSettings = currentSettings.copy(prompt = updatedPrompts)
-                                            onSettingsChange(currentSettings)
-                                            isEditingPrompt = false
-                                            editedPromptText = ""
-                                        }
-                                    ) {
-                                        Text("Save")
-                                    }
-                                }
-                            } else {
-                                Text(
-                                    text = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.clickable { showEditButton = !showEditButton }
-                                )
-                                if (showEditButton) {
+
+                item {
+                    SettingsSection(title = stringResource(R.string.advanced)) {
+                        SettingsItem(
+                            title = stringResource(R.string.silent_timer),
+                            value = "30 min",
+                            onClick = { }
+                        )
+                        SettingsItem(
+                            title = stringResource(R.string.max_work_time),
+                            value = "8 hr",
+                            onClick = { }
+                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                if (isEditingPrompt) {
+                                    OutlinedTextField(
+                                        value = editedPromptText,
+                                        onValueChange = { editedPromptText = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        minLines = 3,
+                                        maxLines = 6,
+                                        label = { Text(stringResource(R.string.instruction_text)) }
+                                    )
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    TextButton(
-                                        onClick = {
-                                            editedPromptText = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text."
-                                            isEditingPrompt = true
-                                            showEditButton = false
-                                        },
-                                        modifier = Modifier.align(Alignment.End)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
                                     ) {
-                                        Text("Edit")
+                                        TextButton(
+                                            onClick = {
+                                                isEditingPrompt = false
+                                                editedPromptText = ""
+                                            }
+                                        ) {
+                                            Text(stringResource(R.string.cancel))
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        TextButton(
+                                            onClick = {
+                                                val updatedPrompts = currentSettings.prompt.toMutableMap()
+                                                val localePrompts = updatedPrompts[currentSettings.promptType]?.toMutableMap() ?: mutableMapOf()
+                                                localePrompts[currentSettings.selectedLocale] = editedPromptText
+                                                updatedPrompts[currentSettings.promptType] = localePrompts
+
+                                                currentSettings = currentSettings.copy(prompt = updatedPrompts)
+                                                onSettingsChange(currentSettings)
+                                                isEditingPrompt = false
+                                                editedPromptText = ""
+                                            }
+                                        ) {
+                                            Text(stringResource(R.string.save))
+                                        }
+                                    }
+                                } else {
+                                    Text(
+                                        text = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.clickable { showEditButton = !showEditButton }
+                                    )
+                                    if (showEditButton) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        TextButton(
+                                            onClick = {
+                                                editedPromptText = currentSettings.prompt[currentSettings.promptType]?.get(currentSettings.selectedLocale) ?: "You are an intelligent secretary. Extract the important content from the following text and make a comprehensive summary. Divide it into appropriate sections. The output format should be plain text."
+                                                isEditingPrompt = true
+                                                showEditButton = false
+                                            },
+                                            modifier = Modifier.align(Alignment.End)
+                                        ) {
+                                            Text(stringResource(R.string.edit_action))
+                                        }
                                     }
                                 }
                             }
@@ -196,11 +198,9 @@ fun SettingsScreen(
                     }
                 }
             }
-            }
-            
-            // Version footnote at the bottom
+
             Text(
-                text = "Version 1.0.0",
+                text = "${stringResource(R.string.version)} 1.0.0",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
@@ -210,11 +210,11 @@ fun SettingsScreen(
             )
         }
     }
-    
+
     if (showLocaleDialog) {
         AlertDialog(
             onDismissRequest = { showLocaleDialog = false },
-            title = { Text("Select Language") },
+            title = { Text(stringResource(R.string.select_language)) },
             text = {
                 Column {
                     RecognizerLocale.getAvailable().forEach { locale ->
@@ -234,16 +234,16 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showLocaleDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
     }
-    
+
     if (showPromptTypeDialog) {
         AlertDialog(
             onDismissRequest = { showPromptTypeDialog = false },
-            title = { Text("Select Prompt Type") },
+            title = { Text(stringResource(R.string.select_prompt_type)) },
             text = {
                 Column {
                     PromptType.entries.forEach { type ->
@@ -263,17 +263,17 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showPromptTypeDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
     }
-    
+
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Reset Settings") },
-            text = { Text("Are you sure you want to reset all settings to default values?") },
+            title = { Text(stringResource(R.string.reset_settings)) },
+            text = { Text(stringResource(R.string.reset_settings_warning)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -282,12 +282,12 @@ fun SettingsScreen(
                         showResetDialog = false
                     }
                 ) {
-                    Text("Reset")
+                    Text(stringResource(R.string.reset))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -339,4 +339,3 @@ fun SettingsItem(
         }
     }
 }
-

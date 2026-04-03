@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Secretari</string>
+
+    <!-- Main Screen -->
+    <string name="records">記錄</string>
+    <string name="no_records">無記錄</string>
+    <string name="start">開始</string>
+    <string name="stop">停止</string>
+    <string name="push_start_button">按下START按鈕錄製您的語音。按下STOP按鈕後將自動生成摘要。</string>
+    <string name="select_language_warning">首先確保在設定中選擇正確的識別語言 ⚙️ 否則內建語音識別器無法正常運作。</string>
+    <string name="low_balance">餘額不足</string>
+    <string name="low_balance_message">請註冊帳戶或加值以繼續使用進階功能。</string>
+    <string name="recharge">加值</string>
+
+    <!-- Menu -->
+    <string name="settings">設定</string>
+    <string name="account">帳戶</string>
+    <string name="login">登入</string>
+    <string name="register">註冊</string>
+    <string name="purchase">購買</string>
+    <string name="help">說明</string>
+
+    <!-- Detail Screen -->
+    <string name="summary">摘要</string>
+    <string name="transcript">轉錄</string>
+    <string name="translation">翻譯</string>
+    <string name="translate">翻譯</string>
+    <string name="share">分享</string>
+    <string name="regenerate">重新生成</string>
+    <string name="recognizing">識別中</string>
+    <string name="streaming_from_ai">從AI串流中</string>
+    <string name="no_summary">無摘要。嘗試重新生成摘要</string>
+    <string name="original_transcript">原始轉錄</string>
+    <string name="recording_failed">錄音失敗</string>
+    <string name="recognized_text">識別文字:</string>
+    <string name="generated_summary">生成的摘要:</string>
+    <string name="ai_generating_summary">AI正在生成摘要…</string>
+    <string name="enter_summary">輸入摘要…</string>
+    <string name="enter_transcript">輸入更正後的轉錄…</string>
+    <string name="add_new_item">新增項目</string>
+    <string name="waiting_for_ai">等待AI回應…</string>
+
+    <!-- Recording status -->
+    <string name="receiving">接收中…</string>
+    <string name="listening">監聽中…</string>
+    <string name="recording_audio">錄音中…</string>
+    <string name="starting">啟動中…</string>
+    <string name="error_prefix">錯誤: %s</string>
+
+    <!-- Settings -->
+    <string name="recognition">識別</string>
+    <string name="language">語言</string>
+    <string name="ai_settings">AI設定</string>
+    <string name="prompt_type">提示類型</string>
+    <string name="audio_silence_threshold">音訊靜音閾值</string>
+    <string name="audio_silence_threshold_label">音訊靜音閾值: %s dB</string>
+    <string name="about">關於</string>
+    <string name="version">版本</string>
+    <string name="advanced">進階</string>
+    <string name="silent_timer">靜音計時器</string>
+    <string name="max_work_time">最大工作時間</string>
+    <string name="instruction_text">指令文字</string>
+    <string name="select_language">選擇語言</string>
+    <string name="select_prompt_type">選擇提示類型</string>
+    <string name="reset_settings">重置設定</string>
+    <string name="reset_settings_warning">確定要將所有設定重置為預設值嗎？</string>
+
+    <!-- Account -->
+    <string name="username">使用者名稱</string>
+    <string name="password">密碼</string>
+    <string name="email">電子郵件</string>
+    <string name="first_name">名字</string>
+    <string name="last_name">姓氏</string>
+    <string name="balance">餘額</string>
+    <string name="tokens">代幣</string>
+    <string name="account_information">帳戶資訊</string>
+    <string name="anonymous_user">匿名使用者</string>
+    <string name="token_usage">代幣使用量</string>
+    <string name="name">姓名</string>
+    <string name="account_balance_usd">帳戶餘額（美元）</string>
+    <string name="confirm_password">確認密碼</string>
+    <string name="passwords_do_not_match">密碼不符</string>
+    <string name="sign_up">註冊</string>
+    <string name="create_account">建立帳戶</string>
+    <string name="create_account_prompt">沒有帳戶？建立帳戶</string>
+    <string name="sign_in_prompt">已有帳戶？登入</string>
+    <string name="sign_in_existing">登入現有帳戶</string>
+    <string name="benefits_of_registration">註冊的好處</string>
+    <string name="benefit_save_recordings">儲存您的錄音和摘要</string>
+    <string name="benefit_premium_features">使用進階AI功能</string>
+    <string name="benefit_sync_devices">跨多個裝置同步</string>
+    <string name="benefit_backup_data">安全備份您的資料</string>
+    <string name="username_validation_error">使用者名稱為必填項，且必須少於20個字元</string>
+    <string name="password_required_error">密碼為必填項</string>
+
+    <!-- Alerts -->
+    <string name="alert">提示</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="cancel">取消</string>
+    <string name="ok">確定</string>
+    <string name="regenerate_summary_warning">從轉錄重新生成摘要。現有內容將被覆蓋。</string>
+    <string name="reset">重置</string>
+    <string name="save">儲存</string>
+    <string name="edit_action">編輯</string>
+    <string name="back">返回</string>
+
+    <!-- Errors -->
+    <string name="error">錯誤</string>
+    <string name="invalid_access_token">無效的存取權杖</string>
+    <string name="failed_to_register">註冊失敗</string>
+    <string name="update_failure">更新失敗</string>
+    <string name="delete_failure">刪除失敗</string>
+    <string name="error_failed_to_initialize_account">初始化使用者帳戶失敗</string>
+    <string name="error_account_initialization">帳戶初始化錯誤: %s</string>
+    <string name="error_failed_to_create_recognition_flow">建立識別流程失敗: %s</string>
+    <string name="error_flow_collection">流程收集錯誤: %s</string>
+    <string name="error_failed_to_start_recording">開始錄音失敗: %s</string>
+    <string name="error_no_speech_recognized">錄音期間未識別到語音</string>
+    <string name="error_failed_to_authenticate">伺服器驗證失敗</string>
+    <string name="error_no_content_to_translate">沒有可翻譯的內容</string>
+    <string name="error_speech_recognition_unavailable">語音識別無法使用</string>
+    <string name="error_audio_recording">音訊錄製錯誤</string>
+    <string name="error_client_side">用戶端錯誤</string>
+    <string name="error_insufficient_permissions">權限不足</string>
+    <string name="error_network">網路錯誤</string>
+    <string name="error_network_timeout">網路逾時</string>
+    <string name="error_no_match">沒有符合的識別結果</string>
+    <string name="error_recognizer_busy">識別服務忙碌中</string>
+    <string name="error_server">伺服器錯誤</string>
+    <string name="error_speech_timeout">沒有語音輸入</string>
+    <string name="error_unknown">未知錯誤</string>
+    <string name="toast_speech_recognition_failed">語音識別失敗: %s</string>
+    <string name="toast_recording_timed_out">錄音在30分鐘後逾時，正在儲存轉錄</string>
+
+    <!-- Permissions -->
+    <string name="permission_required">需要權限</string>
+    <string name="audio_permission_required">使用此應用程式需要音訊錄製權限</string>
+
+    <!-- Translation Screen -->
+    <string name="ai_translating">AI正在翻譯…</string>
+    <string name="select_translation_language">選擇以下語言之一翻譯摘要。如果摘要已存在，將被覆蓋。</string>
+
+    <!-- Store Screen -->
+    <string name="your_balance">您的餘額</string>
+    <string name="loading_products">正在載入產品…</string>
+    <string name="purchase_successful">購買成功！餘額已更新。</string>
+    <string name="store_footer">每個新帳戶都包含免費點數。\n當餘額不足時購買額外代幣。</string>
+</resources>

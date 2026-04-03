@@ -15,6 +15,7 @@ import com.secretari.app.data.model.User
 import com.secretari.app.data.network.ServerStatusResponse
 import com.secretari.app.data.network.WebSocketClient
 import com.secretari.app.data.repository.AudioRecordRepository
+import com.secretari.app.R
 import com.secretari.app.service.RealtimeSpeechRecognition
 import com.secretari.app.service.UniversalAudioRecorder
 import com.secretari.app.util.BillingManager
@@ -104,11 +105,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (success) {
                     checkLoginStatus()
                 } else {
-                    _errorMessage.value = "Failed to initialize user account"
+                    _errorMessage.value = getApplication<Application>().getString(R.string.error_failed_to_initialize_account)
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Account initialization error", e)
-                _errorMessage.value = "Account initialization error: ${e.message}"
+                _errorMessage.value = getApplication<Application>().getString(R.string.error_account_initialization, e.message)
             }
         }
     }
@@ -180,7 +181,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     realtimeSpeechRecognition.startRealtimeRecognition(locale)
                 } catch (e: Exception) {
                     Log.e("MainViewModel", "Exception creating recognition flow: ${e.message}", e)
-                    _errorMessage.value = "Failed to create recognition flow: ${e.message}"
+                    _errorMessage.value = getApplication<Application>().getString(R.string.error_failed_to_create_recognition_flow, e.message)
                     startAudioRecordingFallback()
                     return@launch
                 }
@@ -207,7 +208,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                     Log.e("MainViewModel", "Speech recognition error: ${result.message}")
                                     _errorMessage.value = result.message
                                     _isListening.value = false
-                                    Toast.makeText(getApplication<Application>(), "Speech recognition failed: ${result.message}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(getApplication<Application>(), getApplication<Application>().getString(R.string.toast_speech_recognition_failed, result.message), Toast.LENGTH_LONG).show()
                                     startAudioRecordingFallback()
                                 }
                             }
@@ -215,7 +216,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
                     Log.w("MainViewModel", "Speech recognition timed out after 30 minutes, creating record")
-                    Toast.makeText(getApplication<Application>(), "Recording timed out after 30 minutes, saving transcript", Toast.LENGTH_LONG).show()
+                    Toast.makeText(getApplication<Application>(), getApplication<Application>().getString(R.string.toast_recording_timed_out), Toast.LENGTH_LONG).show()
                     
                     // Stop recording and create a record with current transcript
                     _isRecording.value = false
@@ -237,16 +238,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         sendToAI(currentTranscript, record)
                     } else {
                         Log.w("MainViewModel", "No transcript available after timeout")
-                        _errorMessage.value = "No speech was recognized during the recording session"
+                        _errorMessage.value = getApplication<Application>().getString(R.string.error_no_speech_recognized)
                     }
                 } catch (e: Exception) {
                     Log.e("MainViewModel", "Error collecting speech recognition flow: ${e.message}")
-                    _errorMessage.value = "Flow collection error: ${e.message}"
+                    _errorMessage.value = getApplication<Application>().getString(R.string.error_flow_collection, e.message)
                     startAudioRecordingFallback()
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Error in startRecording: ${e.message}")
-                _errorMessage.value = "Failed to start recording: ${e.message}"
+                _errorMessage.value = getApplication<Application>().getString(R.string.error_failed_to_start_recording, e.message)
                 _isRecording.value = false
             }
         }
@@ -318,7 +319,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         } else {
             Log.w("MainViewModel", "No transcript available when stopping recording")
-            _errorMessage.value = "No speech was recognized during the recording session"
+            _errorMessage.value = getApplication<Application>().getString(R.string.error_no_speech_recognized)
             // Don't create AudioRecord if there's no transcript
         }
     }
@@ -338,7 +339,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     Log.d("MainViewModel", "Temporary user created, token: ${token?.take(10)}...")
                 } else {
                     Log.e("MainViewModel", "Failed to create temporary user")
-                    _errorMessage.value = "Failed to authenticate with server"
+                    _errorMessage.value = getApplication<Application>().getString(R.string.error_failed_to_authenticate)
                     return@launch
                 }
             }
@@ -584,7 +585,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val sourceText = record.summary[record.locale] ?: record.transcript
             
             if (sourceText.isEmpty()) {
-                _errorMessage.value = "No content to translate"
+                _errorMessage.value = getApplication<Application>().getString(R.string.error_no_content_to_translate)
                 return@launch
             }
             

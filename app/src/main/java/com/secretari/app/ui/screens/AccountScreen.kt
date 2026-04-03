@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,10 +37,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.secretari.app.R
 import com.secretari.app.data.model.User
 import com.secretari.app.util.UserManager
 import kotlinx.serialization.InternalSerializationApi
@@ -62,16 +62,16 @@ fun AccountScreen(
     onShowRegisterForm: () -> Unit,
     onHideRegisterForm: () -> Unit
 ) {
+    val titleText = stringResource(when (loginStatus) {
+        UserManager.LoginStatus.SIGNED_IN -> R.string.account
+        UserManager.LoginStatus.SIGNED_OUT -> R.string.login
+        UserManager.LoginStatus.UNREGISTERED -> R.string.register
+    })
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
-                    Text(when (loginStatus) {
-                        UserManager.LoginStatus.SIGNED_IN -> "Account"
-                        UserManager.LoginStatus.SIGNED_OUT -> "Login"
-                        UserManager.LoginStatus.UNREGISTERED -> "Register"
-                    })
-                },
+                title = { Text(titleText) },
                 navigationIcon = {
                     IconButton(onClick = {
                         when {
@@ -80,7 +80,7 @@ fun AccountScreen(
                             else -> onBack()
                         }
                     }) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.Default.ArrowBack, stringResource(R.string.back))
                     }
                 }
             )
@@ -93,7 +93,6 @@ fun AccountScreen(
         ) {
             when (loginStatus) {
                 UserManager.LoginStatus.SIGNED_IN -> {
-                    // Check if user is anonymous (username > 20 chars indicates device ID)
                     if ((user?.username?.length ?: 0) > 20) {
                         when {
                             showLoginFormForAnonymous -> {
@@ -131,28 +130,25 @@ fun AccountDetails(user: User?) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Account Information",
+                text = stringResource(R.string.account_information),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-            
+
             user?.let {
-                val displayName = if (it.username.length > 20) "Anonymous User" else it.username
-                InfoRow("Username", displayName)
-                
+                val anonymousUserStr = stringResource(R.string.anonymous_user)
+                val displayName = if (it.username.length > 20) anonymousUserStr else it.username
+                InfoRow(stringResource(R.string.username), displayName)
+
                 if (it.username.length > 20) {
-                    // Anonymous user - show token usage (same as iOS)
-                    InfoRow("Token usage", it.tokenCount.toString())
+                    InfoRow(stringResource(R.string.token_usage), it.tokenCount.toString())
                 } else {
-                    // Registered user - show full account information
                     it.email?.let { email ->
-                        InfoRow("Email", email)
+                        InfoRow(stringResource(R.string.email), email)
                     }
-                    InfoRow("Name", "${it.givenName ?: ""} ${it.familyName ?: ""}".trim())
-                    
-                    // For registered users, show balance converted to tokens (matching iOS logic)
+                    InfoRow(stringResource(R.string.name), "${it.givenName ?: ""} ${it.familyName ?: ""}".trim())
                     val estimatedTokens = estimateTokens(it.dollarBalance)
-                    InfoRow("Account balance in USD", estimatedTokens.toString())
+                    InfoRow(stringResource(R.string.account_balance_usd), estimatedTokens.toString())
                 }
             }
         }
@@ -179,7 +175,6 @@ fun InfoRow(label: String, value: String) {
     }
 }
 
-// Helper function to estimate tokens from dollar balance (matching iOS logic)
 private fun estimateTokens(dollarBalance: Double): Int {
     return (dollarBalance * 4 * 1000000 / 30).toInt()
 }
@@ -189,7 +184,7 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -197,15 +192,14 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Add back button if onBack is provided
         onBack?.let {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Start
             ) {
                 TextButton(onClick = it) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    Text("Back")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
+                    Text(stringResource(R.string.back))
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -213,24 +207,24 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            label = { Text("Username") },
+            label = { Text(stringResource(R.string.username)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.password)) },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         Button(
             onClick = {
                 isLoading = true
@@ -245,18 +239,17 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Login")
+                Text(stringResource(R.string.login))
             }
         }
-        
-        // Add "Create Account" link if onShowRegisterForm is provided
+
         onShowRegisterForm?.let {
             Spacer(modifier = Modifier.height(16.dp))
             TextButton(
                 onClick = it,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Don't have an account? Create Account")
+                Text(stringResource(R.string.create_account_prompt))
             }
         }
     }
@@ -274,7 +267,11 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
     var isLoading by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    
+
+    val usernameValidationMsg = stringResource(R.string.username_validation_error)
+    val passwordRequiredMsg = stringResource(R.string.password_required_error)
+    val passwordsMismatchMsg = stringResource(R.string.passwords_do_not_match)
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -283,108 +280,106 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
-            // Add back button if onBack is provided
             onBack?.let {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start
                 ) {
                     TextButton(onClick = it) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                        Text("Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
+                        Text(stringResource(R.string.back))
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-        
+
         item {
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username") },
+                label = { Text(stringResource(R.string.username)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.password)) },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
+                label = { Text(stringResource(R.string.confirm_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 isError = confirmPassword.isNotEmpty() && password != confirmPassword
             )
-            
+
             if (confirmPassword.isNotEmpty() && password != confirmPassword) {
                 Text(
-                    text = "Passwords do not match",
+                    text = passwordsMismatchMsg,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
+                label = { Text(stringResource(R.string.email)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedTextField(
                 value = givenName,
                 onValueChange = { givenName = it },
-                label = { Text("First Name") },
+                label = { Text(stringResource(R.string.first_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedTextField(
                 value = familyName,
                 onValueChange = { familyName = it },
-                label = { Text("Last Name") },
+                label = { Text(stringResource(R.string.last_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Button(
                 onClick = {
-                    // Validate inputs
                     when {
                         username.isBlank() || username.length > 20 -> {
-                            errorMessage = "Username is required and must be less than 20 characters"
+                            errorMessage = usernameValidationMsg
                             showError = true
                         }
                         password.isBlank() -> {
-                            errorMessage = "Password is required"
+                            errorMessage = passwordRequiredMsg
                             showError = true
                         }
                         password != confirmPassword -> {
-                            errorMessage = "Passwords do not match"
+                            errorMessage = passwordsMismatchMsg
                             showError = true
                         }
                         else -> {
@@ -411,10 +406,10 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("SIGN UP")
+                    Text(stringResource(R.string.sign_up))
                 }
             }
-            
+
             if (showError) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -424,16 +419,15 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
-            // "Have an account? Sign in" link
+
             onShowLoginForm?.let {
                 TextButton(
                     onClick = it,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Have an account? Sign in")
+                    Text(stringResource(R.string.sign_in_prompt))
                 }
             }
         }
@@ -455,24 +449,15 @@ fun AnonymousUserProfile(
             .padding(16.dp)
     ) {
         item {
-            // Show account details for anonymous user
             AccountDetails(user = user)
         }
-        
+
+        item { Spacer(modifier = Modifier.height(24.dp)) }
+        item { Spacer(modifier = Modifier.height(24.dp)) }
+
         item {
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-        
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-        
-        item {
-            // Register Button
             Button(
-                onClick = {
-                    onShowRegisterForm()
-                },
+                onClick = { onShowRegisterForm() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -481,23 +466,18 @@ fun AnonymousUserProfile(
                 )
             ) {
                 Text(
-                    text = "Create Account",
+                    text = stringResource(R.string.create_account),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
-        
+
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+
         item {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        
-        item {
-            // Login Button
             OutlinedButton(
-                onClick = {
-                    onShowLoginForm()
-                },
+                onClick = { onShowLoginForm() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -506,19 +486,16 @@ fun AnonymousUserProfile(
                 )
             ) {
                 Text(
-                    text = "Sign In to Existing Account",
+                    text = stringResource(R.string.sign_in_existing),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
             }
         }
-        
+
+        item { Spacer(modifier = Modifier.height(24.dp)) }
+
         item {
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-        
-        item {
-            // Benefits section
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -529,19 +506,19 @@ fun AnonymousUserProfile(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Benefits of Registration",
+                        text = stringResource(R.string.benefits_of_registration),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    
+
                     val benefits = listOf(
-                        "Save your recordings and summaries",
-                        "Access premium AI features",
-                        "Sync across multiple devices",
-                        "Backup your data securely"
+                        stringResource(R.string.benefit_save_recordings),
+                        stringResource(R.string.benefit_premium_features),
+                        stringResource(R.string.benefit_sync_devices),
+                        stringResource(R.string.benefit_backup_data)
                     )
-                    
+
                     benefits.forEach { benefit ->
                         Row(
                             modifier = Modifier.padding(vertical = 4.dp),
@@ -565,4 +542,3 @@ fun AnonymousUserProfile(
         }
     }
 }
-

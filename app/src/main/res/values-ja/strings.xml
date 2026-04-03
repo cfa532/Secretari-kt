@@ -1,31 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Secretari</string>
+
+    <!-- Main Screen -->
     <string name="records">記録</string>
     <string name="no_records">記録なし</string>
     <string name="start">開始</string>
     <string name="stop">停止</string>
+    <string name="push_start_button">STARTボタンを押して音声を録音してください。STOPボタンを押すと自動的に要約が生成されます。</string>
+    <string name="select_language_warning">まず設定で認識する正しい言語を選択してください ⚙️ そうしないと内蔵音声認識が正しく動作しません。</string>
+    <string name="low_balance">残高不足</string>
+    <string name="low_balance_message">プレミアム機能を引き続き使用するには、アカウントを登録するか残高を追加してください。</string>
+    <string name="recharge">チャージ</string>
+
+    <!-- Menu -->
     <string name="settings">設定</string>
     <string name="account">アカウント</string>
     <string name="login">ログイン</string>
     <string name="register">登録</string>
     <string name="purchase">購入</string>
     <string name="help">ヘルプ</string>
+
+    <!-- Detail Screen -->
     <string name="summary">要約</string>
     <string name="transcript">転記</string>
     <string name="translation">翻訳</string>
+    <string name="translate">翻訳する</string>
     <string name="share">共有</string>
     <string name="regenerate">再生成</string>
     <string name="recognizing">認識中</string>
     <string name="streaming_from_ai">AIからストリーミング中</string>
+    <string name="no_summary">要約なし。要約を再生成してください</string>
+    <string name="original_transcript">元の転記</string>
+    <string name="recording_failed">録音に失敗しました</string>
+    <string name="recognized_text">認識テキスト:</string>
+    <string name="generated_summary">生成された要約:</string>
+    <string name="ai_generating_summary">AIが要約を生成中…</string>
+    <string name="enter_summary">要約を入力…</string>
+    <string name="enter_transcript">修正した転記を入力…</string>
+    <string name="add_new_item">新しい項目を追加</string>
+    <string name="waiting_for_ai">AI応答を待っています…</string>
+
+    <!-- Recording status -->
+    <string name="receiving">受信中…</string>
+    <string name="listening">聴取中…</string>
+    <string name="recording_audio">録音中…</string>
+    <string name="starting">開始中…</string>
+    <string name="error_prefix">エラー: %s</string>
+
+    <!-- Settings -->
+    <string name="recognition">認識</string>
     <string name="language">言語</string>
+    <string name="ai_settings">AI設定</string>
+    <string name="prompt_type">プロンプトタイプ</string>
+    <string name="audio_silence_threshold">音声無音しきい値</string>
+    <string name="audio_silence_threshold_label">音声無音しきい値: %s dB</string>
+    <string name="about">アプリについて</string>
+    <string name="version">バージョン</string>
+    <string name="advanced">詳細設定</string>
+    <string name="silent_timer">無音タイマー</string>
+    <string name="max_work_time">最大作業時間</string>
+    <string name="instruction_text">指示テキスト</string>
+    <string name="select_language">言語を選択</string>
+    <string name="select_prompt_type">プロンプトタイプを選択</string>
+    <string name="reset_settings">設定をリセット</string>
+    <string name="reset_settings_warning">すべての設定をデフォルト値にリセットしてもよろしいですか？</string>
+
+    <!-- Account -->
     <string name="username">ユーザー名</string>
     <string name="password">パスワード</string>
     <string name="email">メール</string>
     <string name="first_name">名</string>
     <string name="last_name">姓</string>
-    <string name="push_start_button">STARTボタンを押して音声を録音してください。STOPボタンを押すと自動的に要約が生成されます。</string>
-    <string name="select_language_warning">まず設定で認識する正しい言語を選択してください ⚙️ そうしないと内蔵音声認識が正しく動作しません。</string>
-    <string name="no_summary">要約なし。要約を再生成してください</string>
-</resources>
+    <string name="balance">残高</string>
+    <string name="tokens">トークン</string>
+    <string name="account_information">アカウント情報</string>
+    <string name="anonymous_user">匿名ユーザー</string>
+    <string name="token_usage">トークン使用量</string>
+    <string name="name">名前</string>
+    <string name="account_balance_usd">アカウント残高（USD）</string>
+    <string name="confirm_password">パスワードを確認</string>
+    <string name="passwords_do_not_match">パスワードが一致しません</string>
+    <string name="sign_up">サインアップ</string>
+    <string name="create_account">アカウントを作成</string>
+    <string name="create_account_prompt">アカウントをお持ちでない方はこちら</string>
+    <string name="sign_in_prompt">すでにアカウントをお持ちの方はこちら</string>
+    <string name="sign_in_existing">既存のアカウントにサインイン</string>
+    <string name="benefits_of_registration">登録のメリット</string>
+    <string name="benefit_save_recordings">録音と要約を保存する</string>
+    <string name="benefit_premium_features">プレミアムAI機能へのアクセス</string>
+    <string name="benefit_sync_devices">複数のデバイス間で同期</string>
+    <string name="benefit_backup_data">データを安全にバックアップ</string>
+    <string name="username_validation_error">ユーザー名は必須で、20文字以内である必要があります</string>
+    <string name="password_required_error">パスワードが必要です</string>
 
+    <!-- Alerts -->
+    <string name="alert">アラート</string>
+    <string name="yes">はい</string>
+    <string name="no">いいえ</string>
+    <string name="cancel">キャンセル</string>
+    <string name="ok">OK</string>
+    <string name="regenerate_summary_warning">転記から要約を再生成します。既存のコンテンツは上書きされます。</string>
+    <string name="reset">リセット</string>
+    <string name="save">保存</string>
+    <string name="edit_action">編集</string>
+    <string name="back">戻る</string>
+
+    <!-- Errors -->
+    <string name="error">エラー</string>
+    <string name="invalid_access_token">無効なアクセストークン</string>
+    <string name="failed_to_register">登録に失敗しました</string>
+    <string name="update_failure">更新に失敗しました</string>
+    <string name="delete_failure">削除に失敗しました</string>
+    <string name="error_failed_to_initialize_account">ユーザーアカウントの初期化に失敗しました</string>
+    <string name="error_account_initialization">アカウント初期化エラー: %s</string>
+    <string name="error_failed_to_create_recognition_flow">認識フローの作成に失敗しました: %s</string>
+    <string name="error_flow_collection">フロー収集エラー: %s</string>
+    <string name="error_failed_to_start_recording">録音の開始に失敗しました: %s</string>
+    <string name="error_no_speech_recognized">録音中に音声が認識されませんでした</string>
+    <string name="error_failed_to_authenticate">サーバーへの認証に失敗しました</string>
+    <string name="error_no_content_to_translate">翻訳するコンテンツがありません</string>
+    <string name="error_speech_recognition_unavailable">音声認識を利用できません</string>
+    <string name="error_audio_recording">音声録音エラー</string>
+    <string name="error_client_side">クライアント側のエラー</string>
+    <string name="error_insufficient_permissions">権限が不足しています</string>
+    <string name="error_network">ネットワークエラー</string>
+    <string name="error_network_timeout">ネットワークタイムアウト</string>
+    <string name="error_no_match">認識結果が一致しませんでした</string>
+    <string name="error_recognizer_busy">認識サービスがビジー状態です</string>
+    <string name="error_server">サーバーエラー</string>
+    <string name="error_speech_timeout">音声入力がありません</string>
+    <string name="error_unknown">不明なエラー</string>
+    <string name="toast_speech_recognition_failed">音声認識に失敗しました: %s</string>
+    <string name="toast_recording_timed_out">30分後に録音がタイムアウトしました。文字起こしを保存しています</string>
+
+    <!-- Permissions -->
+    <string name="permission_required">権限が必要です</string>
+    <string name="audio_permission_required">このアプリを使用するには音声録音の権限が必要です</string>
+
+    <!-- Translation Screen -->
+    <string name="ai_translating">AIが翻訳中…</string>
+    <string name="select_translation_language">要約を翻訳する言語を選択してください。要約が存在する場合は上書きされます。</string>
+
+    <!-- Store Screen -->
+    <string name="your_balance">残高</string>
+    <string name="loading_products">商品を読み込み中…</string>
+    <string name="purchase_successful">購入が完了しました！残高が更新されました。</string>
+    <string name="store_footer">新しいアカウントには無料クレジットが含まれています。\n残高が不足した場合は追加トークンを購入してください。</string>
+</resources>

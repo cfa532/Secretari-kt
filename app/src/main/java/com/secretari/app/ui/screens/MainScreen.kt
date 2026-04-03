@@ -54,12 +54,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.secretari.app.R
 import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.RecognizerLocale
@@ -89,17 +91,23 @@ fun MainScreen(
     var showMenu by remember { mutableStateOf(false) }
     val settings by viewModel.settings.collectAsState(initial = com.secretari.app.data.model.AppConstants.DEFAULT_SETTINGS)
     val currentUser by viewModel.currentUser.collectAsState(initial = null)
-    
+
+    val accountMenuLabel = stringResource(when (loginStatus) {
+        UserManager.LoginStatus.SIGNED_IN -> R.string.account
+        UserManager.LoginStatus.SIGNED_OUT -> R.string.login
+        UserManager.LoginStatus.UNREGISTERED -> R.string.register
+    })
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "Records",
+                            stringResource(R.string.records),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -113,7 +121,7 @@ fun MainScreen(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Settings") },
+                            text = { Text(stringResource(R.string.settings)) },
                             onClick = {
                                 showMenu = false
                                 onNavigateToSettings()
@@ -121,13 +129,7 @@ fun MainScreen(
                             leadingIcon = { Icon(Icons.Default.Settings, null) }
                         )
                         DropdownMenuItem(
-                            text = { 
-                                Text(when (loginStatus) {
-                                    UserManager.LoginStatus.SIGNED_IN -> "Account"
-                                    UserManager.LoginStatus.SIGNED_OUT -> "Login"
-                                    UserManager.LoginStatus.UNREGISTERED -> "Register"
-                                })
-                            },
+                            text = { Text(accountMenuLabel) },
                             onClick = {
                                 showMenu = false
                                 onNavigateToAccount()
@@ -135,7 +137,7 @@ fun MainScreen(
                             leadingIcon = { Icon(Icons.Default.AccountCircle, null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Purchase") },
+                            text = { Text(stringResource(R.string.purchase)) },
                             onClick = {
                                 showMenu = false
                                 onNavigateToStore()
@@ -143,7 +145,7 @@ fun MainScreen(
                             leadingIcon = { Icon(Icons.Default.Star, null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Help") },
+                            text = { Text(stringResource(R.string.help)) },
                             onClick = {
                                 showMenu = false
                                 onNavigateToHelp()
@@ -161,7 +163,6 @@ fun MainScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Main content area - centered
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -172,7 +173,6 @@ fun MainScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(horizontal = 24.dp)
                     ) {
-                        // Large document icon
                         Icon(
                             Icons.Default.List,
                             contentDescription = null,
@@ -187,30 +187,24 @@ fun MainScreen(
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(20.dp))
-                        
-                        // "No records" title
                         Text(
-                            "No records",
+                            stringResource(R.string.no_records),
                             style = MaterialTheme.typography.headlineSmall.copy(
                                 fontWeight = FontWeight.Bold
                             ),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Main instruction text
                         Text(
-                            "Press the START button to begin recording your speech. Once you press the STOP button, a summary will be generated automatically by OpenAI.",
+                            stringResource(R.string.push_start_button),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                             lineHeight = 20.sp
                         )
                         Spacer(modifier = Modifier.height(24.dp))
-                        
-                        // Settings instruction with blue text - all in one paragraph
                         Text(
-                            "Make sure to select the correct recognizable language in the settings ⚙️ Otherwise, the built-in speech recognizer will not function properly.",
+                            stringResource(R.string.select_language_warning),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             textAlign = TextAlign.Center,
@@ -218,8 +212,7 @@ fun MainScreen(
                         )
                     }
                 }
-                
-                // Start button at the bottom
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -249,7 +242,7 @@ fun MainScreen(
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
-                            "Start",
+                            stringResource(R.string.start),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),
@@ -277,8 +270,7 @@ fun MainScreen(
                         )
                     }
                 }
-                
-                // Balance warning component
+
                 currentUser?.let { user ->
                     if (user.username.length > 20 && user.dollarBalance <= 0.1) {
                         BalanceWarningCard(
@@ -288,8 +280,7 @@ fun MainScreen(
                         )
                     }
                 }
-                
-                // Start button at the bottom when records exist
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -319,7 +310,7 @@ fun MainScreen(
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
-                            "Start",
+                            stringResource(R.string.start),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),
@@ -345,13 +336,12 @@ fun RecordListItem(
     var offsetX by remember { mutableStateOf(0f) }
     val density = LocalDensity.current
     val deleteButtonWidth = with(density) { 60.dp.toPx() }
-    
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // Delete button background
         if (offsetX < 0) {
             Box(
                 modifier = Modifier
@@ -373,8 +363,7 @@ fun RecordListItem(
                 }
             }
         }
-        
-        // Main card
+
         Card(
             onClick = onClick,
             modifier = Modifier
@@ -387,7 +376,6 @@ fun RecordListItem(
                     },
                     orientation = androidx.compose.foundation.gestures.Orientation.Horizontal,
                     onDragStopped = {
-                        // Snap to either fully open or fully closed
                         if (offsetX < -deleteButtonWidth / 2) {
                             offsetX = -deleteButtonWidth
                         } else {
@@ -410,32 +398,24 @@ fun RecordListItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    
-                    // Display content based on prompt type
+
                     val displayText = when (settings.promptType) {
                         PromptType.CHECKLIST -> {
                             if (record.memo.isNotEmpty()) {
-                                // Concatenate checklist items into one paragraph
                                 record.memo.joinToString(" • ") { item ->
                                     val title = item.title[record.locale] ?: "Unknown item"
                                     "${if (item.isChecked) "✓" else "○"} $title"
                                 }
                             } else {
-                                // Fallback to transcript if no checklist items
                                 record.transcript
                             }
                         }
                         else -> {
-                            // For SUMMARY and SUBSCRIPTION, show summary if available, otherwise transcript
                             val summaryText = record.summary[record.locale]
-                            if (!summaryText.isNullOrEmpty()) {
-                                summaryText
-                            } else {
-                                record.transcript
-                            }
+                            if (!summaryText.isNullOrEmpty()) summaryText else record.transcript
                         }
                     }
-                    
+
                     Text(
                         text = displayText.take(150) + if (displayText.length > 150) "..." else "",
                         style = MaterialTheme.typography.bodyMedium,
@@ -473,17 +453,17 @@ fun MainScreenWithRecordsPreview() {
     MaterialTheme {
         val sampleRecords = listOf(
             AudioRecord(
-                recordDate = System.currentTimeMillis() - 86400000, // 1 day ago
+                recordDate = System.currentTimeMillis() - 86400000,
                 transcript = "This is a sample transcript of a recorded speech. It contains multiple sentences to demonstrate how the list item looks with longer text content.",
                 summary = mapOf(RecognizerLocale.ENGLISH to "Sample summary of the recorded speech content.")
             ),
             AudioRecord(
-                recordDate = System.currentTimeMillis() - 172800000, // 2 days ago
+                recordDate = System.currentTimeMillis() - 172800000,
                 transcript = "Another sample record with different content to show variety in the list.",
                 summary = mapOf(RecognizerLocale.ENGLISH to "Another sample summary.")
             )
         )
-        
+
         MainScreen(
             records = sampleRecords,
             loginStatus = UserManager.LoginStatus.SIGNED_IN,
@@ -517,7 +497,7 @@ fun BalanceWarningCard(
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "Low Balance",
+                text = stringResource(R.string.low_balance),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 fontWeight = FontWeight.Bold
@@ -530,7 +510,7 @@ fun BalanceWarningCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Please register an account or recharge to continue using premium features.",
+                text = stringResource(R.string.low_balance_message),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
@@ -546,7 +526,7 @@ fun BalanceWarningCard(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Text("Register")
+                    Text(stringResource(R.string.register))
                 }
                 Button(
                     onClick = onRecharge,
@@ -555,10 +535,9 @@ fun BalanceWarningCard(
                         containerColor = MaterialTheme.colorScheme.secondary
                     )
                 ) {
-                    Text("Recharge")
+                    Text(stringResource(R.string.recharge))
                 }
             }
         }
     }
 }
-

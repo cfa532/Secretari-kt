@@ -7,6 +7,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
+import com.secretari.app.R
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -24,7 +25,7 @@ class SpeechRecognitionService(private val context: Context) {
     
     fun startRecognition(locale: String): Flow<RecognitionResult> = callbackFlow {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            trySend(RecognitionResult.Error(-1, "Speech recognition not available"))
+            trySend(RecognitionResult.Error(-1, context.getString(R.string.error_speech_recognition_unavailable)))
             close()
             return@callbackFlow
         }
@@ -135,16 +136,16 @@ class SpeechRecognitionService(private val context: Context) {
     
     private fun getErrorText(errorCode: Int): String {
         return when (errorCode) {
-            SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
-            SpeechRecognizer.ERROR_CLIENT -> "Client side error"
-            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Insufficient permissions"
-            SpeechRecognizer.ERROR_NETWORK -> "Network error"
-            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
-            SpeechRecognizer.ERROR_NO_MATCH -> "No recognition result matched"
-            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognition service busy"
-            SpeechRecognizer.ERROR_SERVER -> "Server error"
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input"
-            else -> "Unknown error"
+            SpeechRecognizer.ERROR_AUDIO -> context.getString(R.string.error_audio_recording)
+            SpeechRecognizer.ERROR_CLIENT -> context.getString(R.string.error_client_side)
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> context.getString(R.string.error_insufficient_permissions)
+            SpeechRecognizer.ERROR_NETWORK -> context.getString(R.string.error_network)
+            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> context.getString(R.string.error_network_timeout)
+            SpeechRecognizer.ERROR_NO_MATCH -> context.getString(R.string.error_no_match)
+            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> context.getString(R.string.error_recognizer_busy)
+            SpeechRecognizer.ERROR_SERVER -> context.getString(R.string.error_server)
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> context.getString(R.string.error_speech_timeout)
+            else -> context.getString(R.string.error_unknown)
         }
     }
 }

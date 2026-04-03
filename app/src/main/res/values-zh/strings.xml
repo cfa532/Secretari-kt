@@ -1,31 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Secretari</string>
+
+    <!-- Main Screen -->
     <string name="records">记录</string>
     <string name="no_records">无记录</string>
     <string name="start">开始</string>
     <string name="stop">停止</string>
+    <string name="push_start_button">按下START按钮录制您的语音。按下STOP按钮后将自动生成摘要。</string>
+    <string name="select_language_warning">首先确保在设置中选择正确的识别语言 ⚙️ 否则内置语音识别器无法正常工作。</string>
+    <string name="low_balance">余额不足</string>
+    <string name="low_balance_message">请注册账户或充值以继续使用高级功能。</string>
+    <string name="recharge">充值</string>
+
+    <!-- Menu -->
     <string name="settings">设置</string>
     <string name="account">账户</string>
     <string name="login">登录</string>
     <string name="register">注册</string>
     <string name="purchase">购买</string>
     <string name="help">帮助</string>
+
+    <!-- Detail Screen -->
     <string name="summary">摘要</string>
     <string name="transcript">转录</string>
     <string name="translation">翻译</string>
+    <string name="translate">翻译</string>
     <string name="share">分享</string>
     <string name="regenerate">重新生成</string>
     <string name="recognizing">识别中</string>
     <string name="streaming_from_ai">从AI流式传输</string>
+    <string name="no_summary">无摘要。尝试重新生成摘要</string>
+    <string name="original_transcript">原始转录</string>
+    <string name="recording_failed">录音失败</string>
+    <string name="recognized_text">识别文本:</string>
+    <string name="generated_summary">生成的摘要:</string>
+    <string name="ai_generating_summary">AI正在生成摘要…</string>
+    <string name="enter_summary">输入摘要…</string>
+    <string name="enter_transcript">输入更正后的转录…</string>
+    <string name="add_new_item">添加新项目</string>
+    <string name="waiting_for_ai">等待AI响应…</string>
+
+    <!-- Recording status -->
+    <string name="receiving">接收中…</string>
+    <string name="listening">监听中…</string>
+    <string name="recording_audio">录音中…</string>
+    <string name="starting">启动中…</string>
+    <string name="error_prefix">错误: %s</string>
+
+    <!-- Settings -->
+    <string name="recognition">识别</string>
     <string name="language">语言</string>
+    <string name="ai_settings">AI设置</string>
+    <string name="prompt_type">提示类型</string>
+    <string name="audio_silence_threshold">音频静音阈值</string>
+    <string name="audio_silence_threshold_label">音频静音阈值: %s dB</string>
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+    <string name="advanced">高级</string>
+    <string name="silent_timer">静音计时器</string>
+    <string name="max_work_time">最大工作时间</string>
+    <string name="instruction_text">指令文本</string>
+    <string name="select_language">选择语言</string>
+    <string name="select_prompt_type">选择提示类型</string>
+    <string name="reset_settings">重置设置</string>
+    <string name="reset_settings_warning">确定要将所有设置重置为默认值吗？</string>
+
+    <!-- Account -->
     <string name="username">用户名</string>
     <string name="password">密码</string>
     <string name="email">电子邮件</string>
     <string name="first_name">名字</string>
     <string name="last_name">姓氏</string>
-    <string name="push_start_button">按下START按钮录制您的语音。按下STOP按钮后将自动生成摘要。</string>
-    <string name="select_language_warning">首先确保在设置中选择正确的识别语言 ⚙️ 否则内置语音识别器无法正常工作。</string>
-    <string name="no_summary">无摘要。尝试重新生成摘要</string>
-</resources>
+    <string name="balance">余额</string>
+    <string name="tokens">令牌</string>
+    <string name="account_information">账户信息</string>
+    <string name="anonymous_user">匿名用户</string>
+    <string name="token_usage">令牌使用量</string>
+    <string name="name">姓名</string>
+    <string name="account_balance_usd">账户余额（美元）</string>
+    <string name="confirm_password">确认密码</string>
+    <string name="passwords_do_not_match">密码不匹配</string>
+    <string name="sign_up">注册</string>
+    <string name="create_account">创建账户</string>
+    <string name="create_account_prompt">没有账户？创建账户</string>
+    <string name="sign_in_prompt">已有账户？登录</string>
+    <string name="sign_in_existing">登录现有账户</string>
+    <string name="benefits_of_registration">注册的好处</string>
+    <string name="benefit_save_recordings">保存您的录音和摘要</string>
+    <string name="benefit_premium_features">访问高级AI功能</string>
+    <string name="benefit_sync_devices">跨多个设备同步</string>
+    <string name="benefit_backup_data">安全备份您的数据</string>
+    <string name="username_validation_error">用户名是必填项，且必须少于20个字符</string>
+    <string name="password_required_error">密码是必填项</string>
 
+    <!-- Alerts -->
+    <string name="alert">提示</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="cancel">取消</string>
+    <string name="ok">确定</string>
+    <string name="regenerate_summary_warning">从转录重新生成摘要。现有内容将被覆盖。</string>
+    <string name="reset">重置</string>
+    <string name="save">保存</string>
+    <string name="edit_action">编辑</string>
+    <string name="back">返回</string>
+
+    <!-- Errors -->
+    <string name="error">错误</string>
+    <string name="invalid_access_token">无效的访问令牌</string>
+    <string name="failed_to_register">注册失败</string>
+    <string name="update_failure">更新失败</string>
+    <string name="delete_failure">删除失败</string>
+    <string name="error_failed_to_initialize_account">初始化用户账户失败</string>
+    <string name="error_account_initialization">账户初始化错误: %s</string>
+    <string name="error_failed_to_create_recognition_flow">创建识别流程失败: %s</string>
+    <string name="error_flow_collection">流程收集错误: %s</string>
+    <string name="error_failed_to_start_recording">开始录音失败: %s</string>
+    <string name="error_no_speech_recognized">录音期间未识别到语音</string>
+    <string name="error_failed_to_authenticate">服务器验证失败</string>
+    <string name="error_no_content_to_translate">没有可翻译的内容</string>
+    <string name="error_speech_recognition_unavailable">语音识别不可用</string>
+    <string name="error_audio_recording">音频录制错误</string>
+    <string name="error_client_side">客户端错误</string>
+    <string name="error_insufficient_permissions">权限不足</string>
+    <string name="error_network">网络错误</string>
+    <string name="error_network_timeout">网络超时</string>
+    <string name="error_no_match">没有匹配的识别结果</string>
+    <string name="error_recognizer_busy">识别服务繁忙</string>
+    <string name="error_server">服务器错误</string>
+    <string name="error_speech_timeout">没有语音输入</string>
+    <string name="error_unknown">未知错误</string>
+    <string name="toast_speech_recognition_failed">语音识别失败: %s</string>
+    <string name="toast_recording_timed_out">录音在30分钟后超时，正在保存转录</string>
+
+    <!-- Permissions -->
+    <string name="permission_required">需要权限</string>
+    <string name="audio_permission_required">使用此应用需要音频录制权限</string>
+
+    <!-- Translation Screen -->
+    <string name="ai_translating">AI正在翻译…</string>
+    <string name="select_translation_language">选择以下语言之一翻译摘要。如果摘要已存在，将被覆盖。</string>
+
+    <!-- Store Screen -->
+    <string name="your_balance">您的余额</string>
+    <string name="loading_products">正在加载产品…</string>
+    <string name="purchase_successful">购买成功！余额已更新。</string>
+    <string name="store_footer">每个新账户都包含免费积分。\n当余额不足时购买额外令牌。</string>
+</resources>

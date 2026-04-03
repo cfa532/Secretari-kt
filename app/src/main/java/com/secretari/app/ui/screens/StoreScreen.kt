@@ -31,10 +31,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.android.billingclient.api.ProductDetails
+import com.secretari.app.R
 import com.secretari.app.data.model.User
 import com.secretari.app.util.BillingManager
 import kotlinx.serialization.InternalSerializationApi
@@ -50,11 +52,12 @@ fun StoreScreen(
     onBack: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val purchaseSuccessMsg = stringResource(R.string.purchase_successful)
 
     LaunchedEffect(purchaseState) {
         when (purchaseState) {
             is BillingManager.PurchaseState.Success -> {
-                snackbarHostState.showSnackbar("Purchase successful! Balance updated.")
+                snackbarHostState.showSnackbar(purchaseSuccessMsg)
             }
             is BillingManager.PurchaseState.Error -> {
                 snackbarHostState.showSnackbar(purchaseState.message)
@@ -66,10 +69,10 @@ fun StoreScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Purchase") },
+                title = { Text(stringResource(R.string.purchase)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                     }
                 }
             )
@@ -87,7 +90,6 @@ fun StoreScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Current balance card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -101,7 +103,7 @@ fun StoreScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Your Balance",
+                        text = stringResource(R.string.your_balance),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -115,7 +117,6 @@ fun StoreScreen(
                 }
             }
 
-            // Product cards
             if (products.isEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -132,7 +133,7 @@ fun StoreScreen(
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Loading products...",
+                            text = stringResource(R.string.loading_products),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -206,7 +207,7 @@ fun StoreScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Text(
-                text = "Each new account includes a complimentary credit.\nPurchase additional tokens when your balance runs low.",
+                text = stringResource(R.string.store_footer),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

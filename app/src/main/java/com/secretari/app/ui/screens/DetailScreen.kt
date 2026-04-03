@@ -69,9 +69,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.secretari.app.R
 import com.secretari.app.data.model.AppConstants
 import com.secretari.app.data.model.AudioRecord
 import com.secretari.app.data.model.PromptType
@@ -117,44 +119,41 @@ fun DetailScreen(
     var showLocalePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val settings by viewModel.settings.collectAsState(initial = com.secretari.app.data.model.AppConstants.DEFAULT_SETTINGS)
-    
+
     LaunchedEffect(transcript) {
         if (isRecording && transcript.isNotEmpty()) {
             listState.animateScrollToItem(0)
         }
     }
-    
+
     LaunchedEffect(streamedText) {
         if (isStreaming && streamedText.isNotEmpty()) {
             listState.animateScrollToItem(0)
         }
     }
-    
-    // Auto-generate summary if record exists but has no summary
+
     LaunchedEffect(record, settings.promptType) {
         record?.let { currentRecord ->
             val hasSummary = when (settings.promptType) {
                 PromptType.CHECKLIST -> currentRecord.memo.isNotEmpty()
                 else -> currentRecord.summary[currentRecord.locale]?.isNotEmpty() == true
             }
-            
-            // If record has transcript but no summary, auto-call AI
             if (currentRecord.transcript.isNotEmpty() && !hasSummary && !isRecording && !isStreaming) {
                 onSendToAI(currentRecord.transcript)
             }
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Records") },
+                title = { Text(stringResource(R.string.records)) },
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
                         enabled = !isRecording
                     ) {
-                        Icon(Icons.Default.ArrowBack, "Back")
+                        Icon(Icons.Default.ArrowBack, stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -169,7 +168,7 @@ fun DetailScreen(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Share") },
+                            text = { Text(stringResource(R.string.share)) },
                             onClick = {
                                 showMenu = false
                                 onShare()
@@ -177,7 +176,7 @@ fun DetailScreen(
                             leadingIcon = { Icon(Icons.Default.Share, null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Translate") },
+                            text = { Text(stringResource(R.string.translate)) },
                             onClick = {
                                 showMenu = false
                                 onTranslate()
@@ -185,7 +184,7 @@ fun DetailScreen(
                             leadingIcon = { Icon(Icons.Default.Translate, null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Original Transcript") },
+                            text = { Text(stringResource(R.string.original_transcript)) },
                             onClick = {
                                 showMenu = false
                                 showEditTranscriptDialog = true
@@ -193,7 +192,7 @@ fun DetailScreen(
                             leadingIcon = { Icon(Icons.Default.Edit, null) }
                         )
                         DropdownMenuItem(
-                            text = { Text("Regenerate") },
+                            text = { Text(stringResource(R.string.regenerate)) },
                             onClick = {
                                 showMenu = false
                                 showRegenerateDialog = true
@@ -213,8 +212,8 @@ fun DetailScreen(
             when {
                 isRecording -> {
                     RecordingView(
-                        transcript = transcript, 
-                        settings = settings, 
+                        transcript = transcript,
+                        settings = settings,
                         onLocaleChange = onLocaleChange,
                         isListening = isListening,
                         isStreaming = isStreaming,
@@ -229,7 +228,6 @@ fun DetailScreen(
                 }
                 else -> {
                     record?.let {
-                        // Locale picker - like iOS LocalePicker, shown when multiple translations exist
                         val availableLocales = if (settings.promptType == PromptType.CHECKLIST && it.memo.isNotEmpty()) {
                             it.memo.firstOrNull()?.title?.keys?.sorted()?.toList() ?: emptyList()
                         } else if (it.summary.isNotEmpty()) {
@@ -271,18 +269,10 @@ fun DetailScreen(
                             if (settings.promptType == PromptType.CHECKLIST) {
                                 ChecklistView(
                                     record = it,
-                                    onToggleItem = { itemId ->
-                                        onToggleChecklistItem(itemId)
-                                    },
-                                    onEditItem = { itemId, newText ->
-                                        onEditChecklistItem(itemId, newText)
-                                    },
-                                    onAddItem = {
-                                        onAddChecklistItem()
-                                    },
-                                    onRemoveItem = { itemId ->
-                                        onRemoveChecklistItem(itemId)
-                                    }
+                                    onToggleItem = { itemId -> onToggleChecklistItem(itemId) },
+                                    onEditItem = { itemId, newText -> onEditChecklistItem(itemId, newText) },
+                                    onAddItem = { onAddChecklistItem() },
+                                    onRemoveItem = { itemId -> onRemoveChecklistItem(itemId) }
                                 )
                             } else {
                                 SummaryView(record = it, settings = settings, onEditSummary = onEditSummary)
@@ -291,8 +281,7 @@ fun DetailScreen(
                     }
                 }
             }
-            
-            // Stop button at the bottom like Records screen
+
             if (isRecording) {
                 Spacer(modifier = Modifier.weight(1f))
                 Box(
@@ -329,7 +318,7 @@ fun DetailScreen(
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
-                            "Stop",
+                            stringResource(R.string.stop),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.SemiBold
                             ),
@@ -341,19 +330,18 @@ fun DetailScreen(
             }
         }
     }
-    
-    // Show error dialog when recording stops with no speech recognized or recording fails
+
     if (!isRecording && !isStreaming && record == null && errorMessage != null) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Recording Failed") },
+            title = { Text(stringResource(R.string.recording_failed)) },
             text = { Text(errorMessage) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.clearError()
                     onBack()
                 }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
@@ -362,24 +350,24 @@ fun DetailScreen(
     if (showRegenerateDialog) {
         AlertDialog(
             onDismissRequest = { showRegenerateDialog = false },
-            title = { Text("Alert") },
-            text = { Text("Regenerate summary from the transcript. Existing content will be overwritten.") },
+            title = { Text(stringResource(R.string.alert)) },
+            text = { Text(stringResource(R.string.regenerate_summary_warning)) },
             confirmButton = {
                 TextButton(onClick = {
                     showRegenerateDialog = false
                     record?.let { onSendToAI(it.transcript) }
                 }) {
-                    Text("Yes")
+                    Text(stringResource(R.string.yes))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRegenerateDialog = false }) {
-                    Text("No")
+                    Text(stringResource(R.string.no))
                 }
             }
         )
     }
-    
+
     if (showEditTranscriptDialog) {
         EditTranscriptDialog(
             record = record,
@@ -405,6 +393,20 @@ fun RecordingView(
     errorMessage: String? = null,
     onStopRecording: () -> Unit = {}
 ) {
+    val receivingStr = stringResource(R.string.receiving)
+    val listeningStr = stringResource(R.string.listening)
+    val recordingAudioStr = stringResource(R.string.recording_audio)
+    val startingStr = stringResource(R.string.starting)
+    val errorPrefixStr = stringResource(R.string.error_prefix)
+
+    val statusText = when {
+        errorMessage != null -> String.format(errorPrefixStr, errorMessage)
+        isStreaming -> receivingStr
+        isListening -> listeningStr
+        audioFilePath != null -> recordingAudioStr
+        else -> startingStr
+    }
+
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -414,18 +416,9 @@ fun RecordingView(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PulsingDot()
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    when {
-                        errorMessage != null -> "Error: $errorMessage"
-                        isStreaming -> "Receiving..."
-                        isListening -> "Listening..."
-                        audioFilePath != null -> "Recording audio..."
-                        else -> "Starting..."
-                    }, 
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(statusText, style = MaterialTheme.typography.bodyMedium)
             }
-            
+
             var expanded by remember { mutableStateOf(false) }
             Box {
                 TextButton(onClick = { expanded = true }) {
@@ -447,11 +440,9 @@ fun RecordingView(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
-        
-        // Display recognized text in a scrollable container
+
         if (transcript.isNotEmpty()) {
             Card(
                 modifier = Modifier
@@ -465,12 +456,12 @@ fun RecordingView(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Recognized Text:",
+                        text = stringResource(R.string.recognized_text),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    
+
                     SelectionContainer {
                         LazyColumn(
                             modifier = Modifier.heightIn(max = 300.dp)
@@ -493,6 +484,8 @@ fun RecordingView(
 
 @Composable
 fun StreamingView(streamedText: String) {
+    val waitingForAiStr = stringResource(R.string.waiting_for_ai)
+
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -500,9 +493,9 @@ fun StreamingView(streamedText: String) {
         ) {
             PulsingDot()
             Spacer(modifier = Modifier.width(8.dp))
-            Text("AI is generating summary...", style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.ai_generating_summary), style = MaterialTheme.typography.bodyMedium)
         }
-        
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -515,12 +508,12 @@ fun StreamingView(streamedText: String) {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "Generated Summary:",
+                    text = stringResource(R.string.generated_summary),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                
+
                 LazyColumn(
                     modifier = Modifier.heightIn(max = 300.dp)
                 ) {
@@ -530,12 +523,10 @@ fun StreamingView(streamedText: String) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = streamedText.ifEmpty { "Waiting for AI response..." },
+                                    text = streamedText.ifEmpty { waitingForAiStr },
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                
-                                // Show typing cursor when streaming
                                 if (streamedText.isNotEmpty()) {
                                     Text(
                                         text = "|",
@@ -565,7 +556,7 @@ fun ChecklistView(
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
     var editingItemId by remember { mutableStateOf<Int?>(null) }
     var editingText by remember { mutableStateOf("") }
-    
+
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
             Text(
@@ -575,21 +566,20 @@ fun ChecklistView(
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
-        
-        // Show checklist items
+
         items(record.memo.size) { index ->
             val memoItem = record.memo[index]
             val title = memoItem.title[record.locale] ?: "Unknown item"
             val isEditing = editingItemId == memoItem.id
-            
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (memoItem.isChecked) 
-                        MaterialTheme.colorScheme.surfaceVariant 
-                    else 
+                    containerColor = if (memoItem.isChecked)
+                        MaterialTheme.colorScheme.surfaceVariant
+                    else
                         MaterialTheme.colorScheme.surface
                 )
             ) {
@@ -604,7 +594,7 @@ fun ChecklistView(
                         onCheckedChange = { onToggleItem(memoItem.id) }
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    
+
                     if (isEditing) {
                         OutlinedTextField(
                             value = editingText,
@@ -618,13 +608,13 @@ fun ChecklistView(
                                         editingItemId = null
                                         editingText = ""
                                     }) {
-                                        Icon(Icons.Default.Check, "Save")
+                                        Icon(Icons.Default.Check, stringResource(R.string.save))
                                     }
                                     IconButton(onClick = {
                                         editingItemId = null
                                         editingText = ""
                                     }) {
-                                        Icon(Icons.Default.Close, "Cancel")
+                                        Icon(Icons.Default.Close, stringResource(R.string.cancel))
                                     }
                                 }
                             }
@@ -635,22 +625,22 @@ fun ChecklistView(
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier
                                 .weight(1f)
-                                .clickable { 
+                                .clickable {
                                     editingItemId = memoItem.id
                                     editingText = title
                                 },
-                            color = if (memoItem.isChecked) 
+                            color = if (memoItem.isChecked)
                                 MaterialTheme.colorScheme.onSurfaceVariant
-                            else 
+                            else
                                 MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    
+
                     if (!isEditing) {
                         IconButton(onClick = { onRemoveItem(memoItem.id) }) {
                             Icon(
                                 Icons.Default.Delete,
-                                "Remove",
+                                stringResource(R.string.delete_failure),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -658,8 +648,7 @@ fun ChecklistView(
                 }
             }
         }
-        
-        // Add new item button
+
         item {
             Card(
                 modifier = Modifier
@@ -677,12 +666,12 @@ fun ChecklistView(
                 ) {
                     Icon(
                         Icons.Default.Add,
-                        contentDescription = "Add item",
+                        contentDescription = stringResource(R.string.add_new_item),
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Add new item",
+                        text = stringResource(R.string.add_new_item),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier
                             .weight(1f)
@@ -699,10 +688,11 @@ fun ChecklistView(
 @Composable
 fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_SETTINGS, onEditSummary: (String) -> Unit = {}) {
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
-    val summaryText = record.summary[record.locale] ?: "No summary available. Try to regenerate summary."
+    val noSummaryStr = stringResource(R.string.no_summary)
+    val summaryText = record.summary[record.locale] ?: noSummaryStr
     var editedSummary by remember(record.locale) { mutableStateOf(summaryText) }
     val hasChanges = editedSummary != summaryText
-    
+
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
             Text(
@@ -712,8 +702,7 @@ fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_S
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
-        
-        // Show editable summary
+
         item {
             OutlinedTextField(
                 value = editedSummary,
@@ -721,12 +710,12 @@ fun SummaryView(record: AudioRecord, settings: Settings = AppConstants.DEFAULT_S
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 10,
                 maxLines = Int.MAX_VALUE,
-                label = { Text("Summary") },
-                placeholder = { Text("Enter summary...") },
+                label = { Text(stringResource(R.string.summary)) },
+                placeholder = { Text(stringResource(R.string.enter_summary)) },
                 trailingIcon = {
                     if (hasChanges) {
                         IconButton(onClick = { onEditSummary(editedSummary) }) {
-                            Icon(Icons.Default.Save, "Save changes", tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.Save, stringResource(R.string.save), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -744,7 +733,7 @@ fun EditTranscriptDialog(
     val originalTranscript = record?.transcript ?: ""
     var editedTranscript by remember { mutableStateOf(originalTranscript) }
     val hasChanges = editedTranscript != originalTranscript
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         text = {
@@ -754,8 +743,8 @@ fun EditTranscriptDialog(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 8,
                 maxLines = 15,
-                label = { Text("Original Transcript") },
-                placeholder = { Text("Enter the corrected transcript...") }
+                label = { Text(stringResource(R.string.original_transcript)) },
+                placeholder = { Text(stringResource(R.string.enter_transcript)) }
             )
         },
         confirmButton = {
@@ -763,12 +752,12 @@ fun EditTranscriptDialog(
                 onClick = { onSave(editedTranscript) },
                 enabled = hasChanges && editedTranscript.isNotEmpty()
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )
@@ -786,7 +775,7 @@ fun PulsingDot() {
         ),
         label = "scale"
     )
-    
+
     Box(
         modifier = Modifier
             .size(12.dp)
@@ -803,5 +792,3 @@ fun PulsingDot() {
         ) {}
     }
 }
-
-
