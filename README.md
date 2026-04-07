@@ -2,6 +2,10 @@
 
 An Android voice recording and AI-powered transcription and summarization app, ported from the iOS version.
 
+## Download
+
+[Download APK (v1.0)](https://github.com/cfa532/Secretari-kt/releases/download/v1.0/app-release.apk)
+
 ## Overview
 
 Secretari is a powerful speech-to-text application that allows users to:
