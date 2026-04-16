@@ -75,6 +75,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _showRegisterFormForAnonymous = MutableStateFlow(false)
     val showRegisterFormForAnonymous: StateFlow<Boolean> = _showRegisterFormForAnonymous.asStateFlow()
     
+    private val _accountNoticeMessage = MutableStateFlow<String?>(null)
+    val accountNoticeMessage: StateFlow<String?> = _accountNoticeMessage.asStateFlow()
+    
     private val _audioFilePath = MutableStateFlow<String?>(null)
     val audioFilePath: StateFlow<String?> = _audioFilePath.asStateFlow()
     
@@ -188,6 +191,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Use withTimeout to ensure fallback if speech recognition hangs
                 try {
+                    val committedSegments = mutableListOf<String>()
+                    var currentPartialSegment = ""
+
+                    fun rebuildTranscript() {
+                        val committedText = committedSegments.joinToString("\n")
+                        _transcript.value = when {
+                            currentPartialSegment.isBlank() -> committedText
+                            committedText.isBlank() -> currentPartialSegment
+                            else -> "$committedText\n$currentPartialSegment"
+                        }
+                    }
+
                     kotlinx.coroutines.withTimeout(1800000) { // 30 minute timeout
                         recognitionFlow.collect { result ->
                             when (result) {
@@ -198,11 +213,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                     _isListening.value = true
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.PartialText -> {
-                                    _transcript.value = result.text
+                                    currentPartialSegment = result.text.trim()
+                                    rebuildTranscript()
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.FinalText -> {
                                     Log.d("MainViewModel", "Final text: ${result.text}")
-                                    _transcript.value += result.text + "\n"
+                                    val finalizedText = result.text.trim()
+                                    if (finalizedText.isNotEmpty()) {
+                                        val segmentToCommit = when {
+                                            currentPartialSegment.isBlank() -> finalizedText
+                                            finalizedText.contains(currentPartialSegment) -> finalizedText
+                                            currentPartialSegment.contains(finalizedText) -> currentPartialSegment
+                                            else -> finalizedText
+                                        }
+                                        if (committedSegments.lastOrNull() != segmentToCommit) {
+                                            committedSegments.add(segmentToCommit)
+                                        }
+                                    }
+                                    currentPartialSegment = ""
+                                    rebuildTranscript()
                                 }
                                 is RealtimeSpeechRecognition.RecognitionResult.Error -> {
                                     Log.e("MainViewModel", "Speech recognition error: ${result.message}")
@@ -484,6 +513,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val error = userManager.login(username, password)
             if (error == null) {
                 _loginStatus.value = UserManager.LoginStatus.SIGNED_IN
+                _accountNoticeMessage.value = null
             }
             onResult(error)
         }
@@ -511,8 +541,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun register(user: User, onResult: (String?) -> Unit) {
         viewModelScope.launch {
             val error = userManager.register(user)
+            if (error == null) {
+                _loginStatus.value = UserManager.LoginStatus.SIGNED_OUT
+                _showRegisterFormForAnonymous.value = false
+                _showLoginFormForAnonymous.value = false
+                _accountNoticeMessage.value = getApplication<Application>()
+                    .getString(R.string.registration_success_login_prompt)
+            }
             onResult(error)
         }
+    }
+
+    @OptIn(InternalSerializationApi::class)
+    fun updateAccount(user: User, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            val error = userManager.updateUser(user)
+            if (error == null) {
+                _accountNoticeMessage.value = getApplication<Application>()
+                    .getString(R.string.account_updated_success)
+            }
+            onResult(error)
+        }
+    }
+
+    fun logout() {
+        userManager.logout()
+        _loginStatus.value = UserManager.LoginStatus.SIGNED_OUT
+        _showLoginFormForAnonymous.value = false
+        _showRegisterFormForAnonymous.value = false
+        _accountNoticeMessage.value = getApplication<Application>()
+            .getString(R.string.logged_out_success)
+    }
+
+    fun clearAccountNotice() {
+        _accountNoticeMessage.value = null
     }
     
     fun redeemCoupon(coupon: String, onResult: (Boolean) -> Unit) {
@@ -558,7 +620,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             var textToShare = "$dateString:\n"
             
             // Get the summary text for the current locale
-            val summaryText = record.summary[record.locale] ?: "No summary available"
+            val summaryText = record.summary[record.locale]
+                ?: getApplication<Application>().getString(R.string.no_summary_available)
             textToShare += summaryText
             
             // Create share intent
@@ -570,7 +633,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             
             // Start the share activity
             val context = getApplication<Application>()
-            val chooserIntent = Intent.createChooser(shareIntent, "Share Summary")
+            val chooserIntent = Intent.createChooser(
+                shareIntent,
+                getApplication<Application>().getString(R.string.share_summary)
+            )
             chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooserIntent)
         }

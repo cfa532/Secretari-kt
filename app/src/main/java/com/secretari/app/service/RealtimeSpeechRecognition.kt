@@ -20,6 +20,9 @@ class RealtimeSpeechRecognition(private val context: Context) {
     private var speechRecognizer: SpeechRecognizer? = null
     private var isRecording = false
     private var currentTranscript = ""
+    private var latestPartialText = ""
+    private var lastFinalText = ""
+    private var lastFinalTimestamp = 0L
     
     // Recognition optimization data
     private val recognitionHistory = mutableListOf<RecognitionResult>()
@@ -184,6 +187,7 @@ class RealtimeSpeechRecognition(private val context: Context) {
             override fun onBeginningOfSpeech() {
                 Log.d("RealtimeSpeech", "Beginning of speech")
                 consecutiveNoMatch = 0
+                latestPartialText = ""
                 channel.trySend(RecognitionResult.Listening)
             }
             
@@ -288,14 +292,19 @@ class RealtimeSpeechRecognition(private val context: Context) {
                     val bestResult = selectBestResult(matches, confidenceScores)
                     
                     if (bestResult != null) {
-                        currentTranscript = bestResult.text
+                        emitFinalText(bestResult.text, "optimized", channel)
                         Log.d("RealtimeSpeech", "Optimized result: '${bestResult.text}' (confidence: ${bestResult.confidence})")
-                        channel.trySend(RecognitionResult.FinalText(bestResult.text))
                     } else {
                         Log.d("RealtimeSpeech", "No result passed optimization filters")
+                        if (latestPartialText.isNotBlank()) {
+                            emitFinalText(latestPartialText, "partial-fallback-after-filter", channel)
+                        }
                     }
                 } else {
                     Log.d("RealtimeSpeech", "No final results received")
+                    if (latestPartialText.isNotBlank()) {
+                        emitFinalText(latestPartialText, "partial-fallback-no-results", channel)
+                    }
                 }
                 
                 // Always restart listening for continuous speech recognition
@@ -319,7 +328,11 @@ class RealtimeSpeechRecognition(private val context: Context) {
                     val text = bestResult?.text ?: matches[0] // Fallback to first result
                     
                     Log.d("RealtimeSpeech", "Partial result: $text")
-                    channel.trySend(RecognitionResult.PartialText(text))
+                    val normalizedText = text.trim()
+                    if (normalizedText.isNotEmpty()) {
+                        latestPartialText = normalizedText
+                        channel.trySend(RecognitionResult.PartialText(normalizedText))
+                    }
                 }
             }
             
@@ -372,10 +385,38 @@ class RealtimeSpeechRecognition(private val context: Context) {
     
     fun stopRecognition() {
         isRecording = false
+        latestPartialText = ""
+        lastFinalText = ""
+        lastFinalTimestamp = 0L
         speechRecognizer?.stopListening()
         speechRecognizer?.cancel()
         speechRecognizer?.destroy()
         speechRecognizer = null
+    }
+
+    private fun emitFinalText(
+        candidateText: String,
+        source: String,
+        channel: kotlinx.coroutines.channels.SendChannel<RecognitionResult>
+    ) {
+        val normalizedText = candidateText.trim()
+        if (normalizedText.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        val isImmediateDuplicate =
+            normalizedText == lastFinalText && (now - lastFinalTimestamp) < 1500L
+        if (isImmediateDuplicate) {
+            Log.d("RealtimeSpeech", "Skipping duplicate final text from $source: '$normalizedText'")
+            latestPartialText = ""
+            return
+        }
+
+        currentTranscript = normalizedText
+        lastFinalText = normalizedText
+        lastFinalTimestamp = now
+        latestPartialText = ""
+        Log.d("RealtimeSpeech", "Finalized from $source: '$normalizedText'")
+        channel.trySend(RecognitionResult.FinalText(normalizedText))
     }
     
     // ===== RECOGNITION OPTIMIZATION ALGORITHMS =====
