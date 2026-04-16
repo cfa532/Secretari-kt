@@ -479,13 +479,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
-    fun login(username: String, password: String, onResult: (Boolean) -> Unit) {
+    fun login(username: String, password: String, onResult: (String?) -> Unit) {
         viewModelScope.launch {
-            val success = userManager.login(username, password)
-            if (success) {
+            val error = userManager.login(username, password)
+            if (error == null) {
                 _loginStatus.value = UserManager.LoginStatus.SIGNED_IN
             }
-            onResult(success)
+            onResult(error)
         }
     }
     
@@ -508,10 +508,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     @OptIn(InternalSerializationApi::class)
-    fun register(user: User, onResult: (Boolean) -> Unit) {
+    fun register(user: User, onResult: (String?) -> Unit) {
         viewModelScope.launch {
-            val success = userManager.register(user)
-            onResult(success)
+            val error = userManager.register(user)
+            onResult(error)
         }
     }
     

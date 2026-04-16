@@ -281,16 +281,18 @@ fun NavGraph(
                 loginStatus = loginStatus,
                 showLoginFormForAnonymous = viewModel.showLoginFormForAnonymous.collectAsState(initial = false).value,
                 showRegisterFormForAnonymous = viewModel.showRegisterFormForAnonymous.collectAsState(initial = false).value,
-                onLogin = { username, password ->
-                    viewModel.login(username, password) { success ->
-                        if (success) {
+                onLogin = { username, password, onResult ->
+                    viewModel.login(username, password) { error ->
+                        onResult(error)
+                        if (error == null) {
                             navController.popBackStack()
                         }
                     }
                 },
-                onRegister = { user ->
-                    viewModel.register(user) { success ->
-                        if (success) {
+                onRegister = { user, onResult ->
+                    viewModel.register(user) { error ->
+                        onResult(error)
+                        if (error == null) {
                             navController.popBackStack()
                         }
                     }

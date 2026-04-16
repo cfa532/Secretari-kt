@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
@@ -39,6 +40,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.secretari.app.R
@@ -54,8 +58,8 @@ fun AccountScreen(
     loginStatus: UserManager.LoginStatus,
     showLoginFormForAnonymous: Boolean,
     showRegisterFormForAnonymous: Boolean,
-    onLogin: (String, String) -> Unit,
-    onRegister: (User) -> Unit,
+    onLogin: (String, String, (String?) -> Unit) -> Unit,
+    onRegister: (User, (String?) -> Unit) -> Unit,
     onBack: () -> Unit,
     onShowLoginForm: () -> Unit,
     onHideLoginForm: () -> Unit,
@@ -180,10 +184,11 @@ private fun estimateTokens(dollarBalance: Double): Int {
 }
 
 @Composable
-fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, onShowRegisterForm: (() -> Unit)? = null) {
+fun LoginForm(onLogin: (String, String, (String?) -> Unit) -> Unit, onBack: (() -> Unit)? = null, onShowRegisterForm: (() -> Unit)? = null) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -209,6 +214,12 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
             onValueChange = { username = it },
             label = { Text(stringResource(R.string.username)) },
             modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                autoCorrect = false,
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
             singleLine = true
         )
 
@@ -220,6 +231,12 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
             label = { Text(stringResource(R.string.password)) },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                autoCorrect = false,
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
             singleLine = true
         )
 
@@ -228,7 +245,11 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
         Button(
             onClick = {
                 isLoading = true
-                onLogin(username, password)
+                errorMessage = null
+                onLogin(username, password) { error ->
+                    isLoading = false
+                    errorMessage = error
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = username.isNotBlank() && password.isNotBlank() && !isLoading
@@ -241,6 +262,16 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
             } else {
                 Text(stringResource(R.string.login))
             }
+        }
+
+        errorMessage?.let { msg ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = msg,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
 
         onShowRegisterForm?.let {
@@ -257,7 +288,7 @@ fun LoginForm(onLogin: (String, String) -> Unit, onBack: (() -> Unit)? = null, o
 
 @OptIn(InternalSerializationApi::class)
 @Composable
-fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onShowLoginForm: (() -> Unit)? = null) {
+fun RegisterForm(onRegister: (User, (String?) -> Unit) -> Unit, onBack: (() -> Unit)? = null, onShowLoginForm: (() -> Unit)? = null) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -300,6 +331,12 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
                 onValueChange = { username = it },
                 label = { Text(stringResource(R.string.username)) },
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrect = false,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
                 singleLine = true
             )
 
@@ -311,6 +348,12 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
                 label = { Text(stringResource(R.string.password)) },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrect = false,
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                ),
                 singleLine = true
             )
 
@@ -322,6 +365,12 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
                 label = { Text(stringResource(R.string.confirm_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrect = false,
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                ),
                 singleLine = true,
                 isError = confirmPassword.isNotEmpty() && password != confirmPassword
             )
@@ -342,6 +391,12 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
                 onValueChange = { email = it },
                 label = { Text(stringResource(R.string.email)) },
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    autoCorrect = false,
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
                 singleLine = true
             )
 
@@ -393,7 +448,13 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
                                 givenName = givenName,
                                 familyName = familyName
                             )
-                            onRegister(user)
+                            onRegister(user) { error ->
+                                isLoading = false
+                                if (error != null) {
+                                    errorMessage = error
+                                    showError = true
+                                }
+                            }
                         }
                     }
                 },
@@ -438,8 +499,8 @@ fun RegisterForm(onRegister: (User) -> Unit, onBack: (() -> Unit)? = null, onSho
 @Composable
 fun AnonymousUserProfile(
     user: User?,
-    onRegister: (User) -> Unit,
-    onLogin: (String, String) -> Unit,
+    onRegister: (User, (String?) -> Unit) -> Unit,
+    onLogin: (String, String, (String?) -> Unit) -> Unit,
     onShowLoginForm: () -> Unit,
     onShowRegisterForm: () -> Unit
 ) {

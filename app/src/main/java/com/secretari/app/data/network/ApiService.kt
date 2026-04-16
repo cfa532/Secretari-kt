@@ -1,14 +1,13 @@
 package com.secretari.app.data.network
 
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.DELETE
-import retrofit2.http.Field
-import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -48,11 +47,9 @@ interface ApiService {
     @GET("secretari/server/status")
     suspend fun getServerStatus(): Response<ServerStatusResponse>
     
-    @FormUrlEncoded
     @POST("secretari/token")
     suspend fun fetchToken(
-        @Field("username") username: String,
-        @Field("password") password: String
+        @Body requestBody: RequestBody
     ): Response<TokenResponse>
     
     companion object {
@@ -143,8 +140,8 @@ data class UserData(
 )
 
 data class TokenResponse(
-    val access_token: String,
-    val token_type: String
+    val token: TokenData,
+    val user: UserData
 )
 
 data class ServerStatusResponse(

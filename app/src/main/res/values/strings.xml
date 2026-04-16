@@ -78,7 +78,7 @@
     <string name="anonymous_user">Anonymous User</string>
     <string name="token_usage">Token Usage</string>
     <string name="name">Name</string>
-    <string name="account_balance_usd">Account Balance in USD</string>
+    <string name="account_balance_usd">Account Balance</string>
     <string name="confirm_password">Confirm Password</string>
     <string name="passwords_do_not_match">Passwords do not match</string>
     <string name="sign_up">Sign Up</string>

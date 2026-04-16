@@ -78,7 +78,7 @@
     <string name="anonymous_user">匿名使用者</string>
     <string name="token_usage">代幣使用量</string>
     <string name="name">姓名</string>
-    <string name="account_balance_usd">帳戶餘額（美元）</string>
+    <string name="account_balance_usd">帳戶餘額</string>
     <string name="confirm_password">確認密碼</string>
     <string name="passwords_do_not_match">密碼不符</string>
     <string name="sign_up">註冊</string>

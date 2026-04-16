@@ -78,7 +78,7 @@
     <string name="anonymous_user">匿名用户</string>
     <string name="token_usage">令牌使用量</string>
     <string name="name">姓名</string>
-    <string name="account_balance_usd">账户余额（美元）</string>
+    <string name="account_balance_usd">账户余额</string>
     <string name="confirm_password">确认密码</string>
     <string name="passwords_do_not_match">密码不匹配</string>
     <string name="sign_up">注册</string>

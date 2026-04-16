@@ -20,6 +20,12 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.InternalSerializationApi
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 private val Context.userDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
@@ -109,9 +115,21 @@ class UserManager(private val context: Context) {
             } else {
                 // User may already exist on server (like iOS fallback to fetchToken)
                 android.util.Log.d("UserManager", "createTempUser returned ${response.code()}, attempting fetchToken")
-                val tokenResponse = apiService.fetchToken(deviceId, password)
+                val tokenResponse = apiService.fetchToken(buildTokenRequestBody(deviceId, password))
                 if (tokenResponse.isSuccessful) {
-                    userToken = tokenResponse.body()?.access_token
+                    val body = tokenResponse.body()
+                    userToken = body?.token?.access_token
+                    body?.user?.let { serverUser ->
+                        val refreshedUser = User(
+                            id = serverUser.id,
+                            username = deviceId,
+                            password = "",
+                            tokenCount = serverUser.token_count,
+                            dollarBalance = serverUser.dollar_balance,
+                            monthlyUsage = serverUser.monthly_usage
+                        )
+                        persistUser(refreshedUser)
+                    }
                     android.util.Log.d("UserManager", "Token refreshed for existing temp user")
                     // Return existing local user or create a minimal one
                     val existingUser = getUser()
@@ -131,19 +149,26 @@ class UserManager(private val context: Context) {
         }
     }
     
-    suspend fun register(user: User): Boolean {
+    suspend fun register(user: User): String? {
         return try {
+            val normalizedUsername = user.username.trim()
+            val normalizedEmail = user.email?.trim()
+            val normalizedUser = user.copy(
+                username = normalizedUsername,
+                email = normalizedEmail
+            )
+
             // Get current anonymous user to merge account data
             val currentUser = getUser()
             val anonymousId = currentUser?.id ?: identifierManager.getDeviceIdentifier()
             
             val response = apiService.registerUser(
                 RegisterRequest(
-                    username = user.username,
-                    password = user.password,
+                    username = normalizedUser.username,
+                    password = normalizedUser.password,
                     family_name = user.familyName ?: "",
                     given_name = user.givenName ?: "",
-                    email = user.email ?: "",
+                    email = normalizedUser.email ?: "",
                     id = anonymousId // Use anonymous account ID for merging
                 )
             )
@@ -162,43 +187,42 @@ class UserManager(private val context: Context) {
                         monthlyUsage = it.monthly_usage
                     )
                     persistUser(updatedUser)
-                    // After registration, user needs to login to get token
                     userToken = null
                 }
-                true
+                null
             } else {
-                false
+                parseErrorDetail(response)
             }
         } catch (e: Exception) {
-            false
+            e.message ?: "Unknown error"
         }
     }
     
-    suspend fun login(username: String, password: String): Boolean {
+    suspend fun login(username: String, password: String): String? {
         return try {
-            val response = apiService.fetchToken(username, password)
+            val response = fetchTokenWithTrimFallback(username, password)
             if (response.isSuccessful) {
                 val body = response.body()
-                userToken = body?.access_token
+                userToken = body?.token?.access_token
                 
-                // After successful login, fetch updated user data with merged account
-                // This will include the balance and data from the anonymous account
-                val currentUser = getUser()
-                if (currentUser != null) {
-                    // Update user data with server response
-                    val updatedUser = currentUser.copy(
-                        username = username,
-                        password = "" // Don't store password
+                body?.user?.let { serverUser ->
+                    val updatedUser = User(
+                        id = serverUser.id,
+                        username = username.trim(),
+                        password = "",
+                        tokenCount = serverUser.token_count,
+                        dollarBalance = serverUser.dollar_balance,
+                        monthlyUsage = serverUser.monthly_usage
                     )
                     persistUser(updatedUser)
                 }
                 
-                true
+                null
             } else {
-                false
+                parseErrorDetail(response)
             }
         } catch (e: Exception) {
-            false
+            e.message ?: "Unknown error"
         }
     }
     
@@ -335,6 +359,45 @@ class UserManager(private val context: Context) {
             encryptedPrefs.edit().putString("device_id", newId).apply()
             newId
         }
+    }
+
+    private fun <T> parseErrorDetail(response: retrofit2.Response<T>): String {
+        return try {
+            val errorBody = response.errorBody()?.string()
+            if (errorBody != null) {
+                val json = JSONObject(errorBody)
+                json.optString("detail", "Request failed (${response.code()})")
+            } else {
+                "Request failed (${response.code()})"
+            }
+        } catch (e: Exception) {
+            "Request failed (${response.code()})"
+        }
+    }
+
+    private fun buildTokenRequestBody(username: String, password: String): RequestBody {
+        val formData = "username=${encodeFormValue(username)}&password=${encodeFormValue(password)}"
+        return formData.toRequestBody("application/x-www-form-urlencoded".toMediaType())
+    }
+
+    private suspend fun fetchTokenWithTrimFallback(username: String, password: String) =
+        apiService.fetchToken(buildTokenRequestBody(username, password)).let { response ->
+            if (response.isSuccessful) {
+                return@let response
+            }
+            val trimmedUsername = username.trim()
+            val trimmedPassword = password.trim()
+            val shouldRetry = trimmedUsername != username || trimmedPassword != password
+            if (shouldRetry) {
+                apiService.fetchToken(buildTokenRequestBody(trimmedUsername, trimmedPassword))
+            } else {
+                response
+            }
+        }
+
+    private fun encodeFormValue(value: String): String {
+        // Match iOS URLQueryItem style: spaces as %20 and '+' as %2B.
+        return URLEncoder.encode(value, StandardCharsets.UTF_8.toString()).replace("+", "%20")
     }
     
     companion object {

@@ -24,6 +24,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
@@ -287,6 +292,7 @@ fun DetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.navigationBars)
                         .padding(horizontal = 40.dp, vertical = 40.dp),
                     contentAlignment = Alignment.Center
                 ) {
