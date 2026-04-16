@@ -13,7 +13,7 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.secretari.app"
-    compileSdk = 36
+    compileSdk = 37
 
     signingConfigs {
         create("release") {
@@ -27,8 +27,8 @@ android {
     defaultConfig {
         applicationId = "com.secretari.app"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 8
+        targetSdk = 37
+        versionCode = 9
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -103,7 +103,7 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
