@@ -166,7 +166,7 @@ fun DetailScreen(
                         onClick = { showMenu = true },
                         enabled = !isRecording
                     ) {
-                        Icon(Icons.Default.MoreVert, "Menu")
+                        Icon(Icons.Default.MoreVert, stringResource(R.string.menu))
                     }
                     DropdownMenu(
                         expanded = showMenu,
@@ -575,7 +575,7 @@ fun ChecklistView(
 
         items(record.memo.size) { index ->
             val memoItem = record.memo[index]
-            val title = memoItem.title[record.locale] ?: "Unknown item"
+            val title = memoItem.title[record.locale] ?: stringResource(R.string.unknown_item)
             val isEditing = editingItemId == memoItem.id
 
             Card(
@@ -646,7 +646,7 @@ fun ChecklistView(
                         IconButton(onClick = { onRemoveItem(memoItem.id) }) {
                             Icon(
                                 Icons.Default.Delete,
-                                stringResource(R.string.delete_failure),
+                                stringResource(R.string.delete),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }

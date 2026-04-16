@@ -80,8 +80,14 @@
     <string name="name">名前</string>
     <string name="account_balance_usd">アカウント残高</string>
     <string name="confirm_password">パスワードを確認</string>
+    <string name="new_password_optional">新しいパスワード（任意）</string>
     <string name="passwords_do_not_match">パスワードが一致しません</string>
     <string name="sign_up">サインアップ</string>
+    <string name="logout">ログアウト</string>
+    <string name="save_changes">変更を保存</string>
+    <string name="registration_success_login_prompt">登録が完了しました。新しいアカウントでログインしてください。</string>
+    <string name="account_updated_success">アカウントを更新しました。</string>
+    <string name="logged_out_success">ログアウトしました。</string>
     <string name="create_account">アカウントを作成</string>
     <string name="create_account_prompt">アカウントをお持ちでない方はこちら</string>
     <string name="sign_in_prompt">すでにアカウントをお持ちの方はこちら</string>
@@ -126,6 +132,9 @@
     <string name="error_insufficient_permissions">権限が不足しています</string>
     <string name="error_network">ネットワークエラー</string>
     <string name="error_network_timeout">ネットワークタイムアウト</string>
+    <string name="error_invalid_credentials">ユーザー名またはパスワードが正しくありません</string>
+    <string name="error_username_already_exists">このユーザー名は既に使用されています</string>
+    <string name="error_email_already_exists">このメールアドレスは既に使用されています</string>
     <string name="error_no_match">認識結果が一致しませんでした</string>
     <string name="error_recognizer_busy">認識サービスがビジー状態です</string>
     <string name="error_server">サーバーエラー</string>
@@ -133,6 +142,8 @@
     <string name="error_unknown">不明なエラー</string>
     <string name="toast_speech_recognition_failed">音声認識に失敗しました: %s</string>
     <string name="toast_recording_timed_out">30分後に録音がタイムアウトしました。文字起こしを保存しています</string>
+    <string name="request_failed">リクエストに失敗しました（%1$d）</string>
+    <string name="request_failed_with_detail">リクエストに失敗しました（%1$d）: %2$s</string>
 
     <!-- Permissions -->
     <string name="permission_required">権限が必要です</string>
@@ -147,4 +158,12 @@
     <string name="loading_products">商品を読み込み中…</string>
     <string name="purchase_successful">購入が完了しました！残高が更新されました。</string>
     <string name="store_footer">新しいアカウントには無料クレジットが含まれています。\n残高が不足した場合は追加トークンを購入してください。</string>
+    <string name="menu">メニュー</string>
+    <string name="delete">削除</string>
+    <string name="unknown_item">不明な項目</string>
+    <string name="new_item_default_title">新しい項目</string>
+    <string name="no_summary_available">要約はありません</string>
+    <string name="share_summary">要約を共有</string>
+    <string name="balance_amount">残高: $%.2f</string>
+    <string name="placeholder_coming_soon">%1$s - 準備中</string>
 </resources>

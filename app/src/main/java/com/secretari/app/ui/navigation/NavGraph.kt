@@ -20,7 +20,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.secretari.app.R
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -67,6 +69,8 @@ fun NavGraph(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val shouldNavigateBack by viewModel.shouldNavigateBack.collectAsState()
     val currentRecord by viewModel.currentRecord.collectAsState()
+    val accountNoticeMessage by viewModel.accountNoticeMessage.collectAsState()
+    val newItemDefaultTitle = stringResource(R.string.new_item_default_title)
     
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
@@ -196,7 +200,7 @@ fun NavGraph(
                         val newId = (record.memo.maxOfOrNull { it.id } ?: 0) + 1
                         val newItem = AudioRecord.MemoJsonData(
                             id = newId,
-                            title = mapOf(record.locale to "New item"),
+                            title = mapOf(record.locale to newItemDefaultTitle),
                             isChecked = false
                         )
                         val updatedRecord = record.copy(memo = record.memo.toMutableList().apply { add(newItem) })
@@ -281,6 +285,7 @@ fun NavGraph(
                 loginStatus = loginStatus,
                 showLoginFormForAnonymous = viewModel.showLoginFormForAnonymous.collectAsState(initial = false).value,
                 showRegisterFormForAnonymous = viewModel.showRegisterFormForAnonymous.collectAsState(initial = false).value,
+                noticeMessage = accountNoticeMessage,
                 onLogin = { username, password, onResult ->
                     viewModel.login(username, password) { error ->
                         onResult(error)
@@ -292,10 +297,16 @@ fun NavGraph(
                 onRegister = { user, onResult ->
                     viewModel.register(user) { error ->
                         onResult(error)
-                        if (error == null) {
-                            navController.popBackStack()
-                        }
                     }
+                },
+                onUpdateAccount = { user, onResult ->
+                    viewModel.updateAccount(user, onResult)
+                },
+                onLogout = {
+                    viewModel.logout()
+                },
+                onClearNotice = {
+                    viewModel.clearAccountNotice()
                 },
                 onBack = {
                     navController.popBackStack()
@@ -337,9 +348,8 @@ fun NavGraph(
         }
         
         composable(Screen.Help.route) {
-            // Placeholder for Help screen
             PlaceholderScreen(
-                title = "Help",
+                title = stringResource(R.string.help),
                 onBack = { navController.popBackStack() }
             )
         }
@@ -357,7 +367,7 @@ fun PlaceholderScreen(title: String, onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.Filled.ArrowBack,
-                            "Back"
+                            stringResource(R.string.back)
                         )
                     }
                 }
@@ -370,7 +380,7 @@ fun PlaceholderScreen(title: String, onBack: () -> Unit) {
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            Text("$title - Coming Soon")
+            Text(stringResource(R.string.placeholder_coming_soon, title))
         }
     }
 }

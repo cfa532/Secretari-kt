@@ -80,8 +80,14 @@
     <string name="name">Name</string>
     <string name="account_balance_usd">Account Balance</string>
     <string name="confirm_password">Confirm Password</string>
+    <string name="new_password_optional">New Password (optional)</string>
     <string name="passwords_do_not_match">Passwords do not match</string>
     <string name="sign_up">Sign Up</string>
+    <string name="logout">Logout</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="registration_success_login_prompt">Registration successful. Please log in with your new account.</string>
+    <string name="account_updated_success">Account updated successfully.</string>
+    <string name="logged_out_success">You have been logged out.</string>
     <string name="create_account">Create Account</string>
     <string name="create_account_prompt">Don\'t have an account? Create Account</string>
     <string name="sign_in_prompt">Have an account? Sign in</string>
@@ -126,6 +132,9 @@
     <string name="error_insufficient_permissions">Insufficient permissions</string>
     <string name="error_network">Network error</string>
     <string name="error_network_timeout">Network timeout</string>
+    <string name="error_invalid_credentials">Incorrect username or password</string>
+    <string name="error_username_already_exists">This username is already in use</string>
+    <string name="error_email_already_exists">This email is already in use</string>
     <string name="error_no_match">No recognition result matched</string>
     <string name="error_recognizer_busy">Recognition service busy</string>
     <string name="error_server">Server error</string>
@@ -133,6 +142,8 @@
     <string name="error_unknown">Unknown error</string>
     <string name="toast_speech_recognition_failed">Speech recognition failed: %s</string>
     <string name="toast_recording_timed_out">Recording timed out after 30 minutes, saving transcript</string>
+    <string name="request_failed">Request failed (%1$d)</string>
+    <string name="request_failed_with_detail">Request failed (%1$d): %2$s</string>
 
     <!-- Permissions -->
     <string name="permission_required">Permission Required</string>
@@ -147,4 +158,12 @@
     <string name="loading_products">Loading products…</string>
     <string name="purchase_successful">Purchase successful! Balance updated.</string>
     <string name="store_footer">Each new account includes a complimentary credit.\nPurchase additional tokens when your balance runs low.</string>
+    <string name="menu">Menu</string>
+    <string name="delete">Delete</string>
+    <string name="unknown_item">Unknown item</string>
+    <string name="new_item_default_title">New item</string>
+    <string name="no_summary_available">No summary available</string>
+    <string name="share_summary">Share Summary</string>
+    <string name="balance_amount">Balance: $%.2f</string>
+    <string name="placeholder_coming_soon">%1$s - Coming Soon</string>
 </resources>

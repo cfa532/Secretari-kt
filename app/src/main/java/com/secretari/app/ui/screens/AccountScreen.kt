@@ -49,7 +49,6 @@ import com.secretari.app.R
 import com.secretari.app.data.model.User
 import com.secretari.app.util.UserManager
 import kotlinx.serialization.InternalSerializationApi
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, InternalSerializationApi::class)
 @Composable
@@ -58,8 +57,12 @@ fun AccountScreen(
     loginStatus: UserManager.LoginStatus,
     showLoginFormForAnonymous: Boolean,
     showRegisterFormForAnonymous: Boolean,
+    noticeMessage: String?,
     onLogin: (String, String, (String?) -> Unit) -> Unit,
     onRegister: (User, (String?) -> Unit) -> Unit,
+    onUpdateAccount: (User, (String?) -> Unit) -> Unit,
+    onLogout: () -> Unit,
+    onClearNotice: () -> Unit,
     onBack: () -> Unit,
     onShowLoginForm: () -> Unit,
     onHideLoginForm: () -> Unit,
@@ -100,24 +103,55 @@ fun AccountScreen(
                     if ((user?.username?.length ?: 0) > 20) {
                         when {
                             showLoginFormForAnonymous -> {
-                                LoginForm(onLogin = onLogin, onBack = onHideLoginForm, onShowRegisterForm = onShowRegisterForm)
+                                LoginForm(
+                                    onLogin = onLogin,
+                                    onBack = onHideLoginForm,
+                                    onShowRegisterForm = onShowRegisterForm,
+                                    noticeMessage = noticeMessage,
+                                    onClearNotice = onClearNotice
+                                )
                             }
                             showRegisterFormForAnonymous -> {
-                                RegisterForm(onRegister = onRegister, onBack = onHideRegisterForm, onShowLoginForm = onShowLoginForm)
+                                RegisterForm(
+                                    onRegister = onRegister,
+                                    onBack = onHideRegisterForm,
+                                    onShowLoginForm = onShowLoginForm,
+                                    onClearNotice = onClearNotice
+                                )
                             }
                             else -> {
                                 AnonymousUserProfile(user = user, onRegister = onRegister, onLogin = onLogin, onShowLoginForm = onShowLoginForm, onShowRegisterForm = onShowRegisterForm)
                             }
                         }
                     } else {
-                        AccountDetails(user = user)
+                        AccountDetails(
+                            user = user,
+                            noticeMessage = noticeMessage,
+                            onUpdateAccount = onUpdateAccount,
+                            onLogout = onLogout,
+                            onClearNotice = onClearNotice
+                        )
                     }
                 }
                 UserManager.LoginStatus.SIGNED_OUT -> {
-                    LoginForm(onLogin = onLogin)
+                    if (showRegisterFormForAnonymous) {
+                        RegisterForm(
+                            onRegister = onRegister,
+                            onBack = onHideRegisterForm,
+                            onShowLoginForm = onHideRegisterForm,
+                            onClearNotice = onClearNotice
+                        )
+                    } else {
+                        LoginForm(
+                            onLogin = onLogin,
+                            onShowRegisterForm = onShowRegisterForm,
+                            noticeMessage = noticeMessage,
+                            onClearNotice = onClearNotice
+                        )
+                    }
                 }
                 UserManager.LoginStatus.UNREGISTERED -> {
-                    RegisterForm(onRegister = onRegister)
+                    RegisterForm(onRegister = onRegister, onClearNotice = onClearNotice)
                 }
             }
         }
@@ -126,7 +160,22 @@ fun AccountScreen(
 
 @OptIn(InternalSerializationApi::class)
 @Composable
-fun AccountDetails(user: User?) {
+fun AccountDetails(
+    user: User?,
+    noticeMessage: String?,
+    onUpdateAccount: (User, (String?) -> Unit) -> Unit,
+    onLogout: () -> Unit,
+    onClearNotice: () -> Unit
+) {
+    var email by remember(user?.email) { mutableStateOf(user?.email ?: "") }
+    var givenName by remember(user?.givenName) { mutableStateOf(user?.givenName ?: "") }
+    var familyName by remember(user?.familyName) { mutableStateOf(user?.familyName ?: "") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var updateError by remember { mutableStateOf<String?>(null) }
+    val passwordsMismatchMsg = stringResource(R.string.passwords_do_not_match)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -147,12 +196,148 @@ fun AccountDetails(user: User?) {
                 if (it.username.length > 20) {
                     InfoRow(stringResource(R.string.token_usage), it.tokenCount.toString())
                 } else {
-                    it.email?.let { email ->
-                        InfoRow(stringResource(R.string.email), email)
-                    }
-                    InfoRow(stringResource(R.string.name), "${it.givenName ?: ""} ${it.familyName ?: ""}".trim())
                     val estimatedTokens = estimateTokens(it.dollarBalance)
                     InfoRow(stringResource(R.string.account_balance_usd), estimatedTokens.toString())
+                }
+            }
+
+            noticeMessage?.let { message ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            updateError?.let { message ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            user?.takeIf { it.username.length <= 20 }?.let { currentUser ->
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text(stringResource(R.string.email)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    )
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = givenName,
+                    onValueChange = { givenName = it },
+                    label = { Text(stringResource(R.string.first_name)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = familyName,
+                    onValueChange = { familyName = it },
+                    label = { Text(stringResource(R.string.last_name)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.new_password_optional)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Next
+                    ),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text(stringResource(R.string.confirm_password)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    singleLine = true,
+                    isError = confirmPassword.isNotEmpty() && password != confirmPassword
+                )
+                if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = passwordsMismatchMsg,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        onClearNotice()
+                        updateError = null
+                        if (password != confirmPassword) {
+                            updateError = passwordsMismatchMsg
+                            return@Button
+                        }
+
+                        isLoading = true
+                        val updatedUser = currentUser.copy(
+                            email = email.trim(),
+                            givenName = givenName.trim(),
+                            familyName = familyName.trim(),
+                            password = password.trim()
+                        )
+                        onUpdateAccount(updatedUser) { error ->
+                            isLoading = false
+                            updateError = error
+                            if (error == null) {
+                                password = ""
+                                confirmPassword = ""
+                            }
+                        }
+                    },
+                    enabled = !isLoading && password == confirmPassword,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text(stringResource(R.string.save_changes))
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = {
+                        onClearNotice()
+                        onLogout()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.logout))
                 }
             }
         }
@@ -184,7 +369,13 @@ private fun estimateTokens(dollarBalance: Double): Int {
 }
 
 @Composable
-fun LoginForm(onLogin: (String, String, (String?) -> Unit) -> Unit, onBack: (() -> Unit)? = null, onShowRegisterForm: (() -> Unit)? = null) {
+fun LoginForm(
+    onLogin: (String, String, (String?) -> Unit) -> Unit,
+    onBack: (() -> Unit)? = null,
+    onShowRegisterForm: (() -> Unit)? = null,
+    noticeMessage: String? = null,
+    onClearNotice: (() -> Unit)? = null
+) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
@@ -208,6 +399,15 @@ fun LoginForm(onLogin: (String, String, (String?) -> Unit) -> Unit, onBack: (() 
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
+        }
+        noticeMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
         }
         OutlinedTextField(
             value = username,
@@ -246,6 +446,7 @@ fun LoginForm(onLogin: (String, String, (String?) -> Unit) -> Unit, onBack: (() 
             onClick = {
                 isLoading = true
                 errorMessage = null
+                onClearNotice?.invoke()
                 onLogin(username, password) { error ->
                     isLoading = false
                     errorMessage = error
@@ -288,7 +489,12 @@ fun LoginForm(onLogin: (String, String, (String?) -> Unit) -> Unit, onBack: (() 
 
 @OptIn(InternalSerializationApi::class)
 @Composable
-fun RegisterForm(onRegister: (User, (String?) -> Unit) -> Unit, onBack: (() -> Unit)? = null, onShowLoginForm: (() -> Unit)? = null) {
+fun RegisterForm(
+    onRegister: (User, (String?) -> Unit) -> Unit,
+    onBack: (() -> Unit)? = null,
+    onShowLoginForm: (() -> Unit)? = null,
+    onClearNotice: (() -> Unit)? = null
+) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -440,6 +646,7 @@ fun RegisterForm(onRegister: (User, (String?) -> Unit) -> Unit, onBack: (() -> U
                         else -> {
                             isLoading = true
                             showError = false
+                            onClearNotice?.invoke()
                             val user = User(
                                 id = java.util.UUID.randomUUID().toString(),
                                 username = username,
@@ -453,6 +660,10 @@ fun RegisterForm(onRegister: (User, (String?) -> Unit) -> Unit, onBack: (() -> U
                                 if (error != null) {
                                     errorMessage = error
                                     showError = true
+                                } else {
+                                    showError = false
+                                    errorMessage = ""
+                                    onShowLoginForm?.invoke()
                                 }
                             }
                         }
@@ -510,7 +721,7 @@ fun AnonymousUserProfile(
             .padding(16.dp)
     ) {
         item {
-            AccountDetails(user = user)
+            AnonymousAccountDetails(user = user)
         }
 
         item { Spacer(modifier = Modifier.height(24.dp)) }
@@ -599,6 +810,29 @@ fun AnonymousUserProfile(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnonymousAccountDetails(user: User?) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.account_information),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            user?.let {
+                val anonymousUserStr = stringResource(R.string.anonymous_user)
+                val displayName = if (it.username.length > 20) anonymousUserStr else it.username
+                InfoRow(stringResource(R.string.username), displayName)
+                InfoRow(stringResource(R.string.token_usage), it.tokenCount.toString())
             }
         }
     }

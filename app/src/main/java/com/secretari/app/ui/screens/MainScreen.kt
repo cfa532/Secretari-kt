@@ -119,7 +119,7 @@ fun MainScreen(
                 },
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.Person, contentDescription = "Menu")
+                        Icon(Icons.Default.Person, contentDescription = stringResource(R.string.menu))
                     }
                     DropdownMenu(
                         expanded = showMenu,
@@ -340,6 +340,7 @@ fun RecordListItem(
     onDelete: () -> Unit
 ) {
     val dateFormat = remember { SimpleDateFormat("MM/dd HH:mm", Locale.getDefault()) }
+    val unknownItemText = stringResource(R.string.unknown_item)
     var offsetX by remember { mutableStateOf(0f) }
     val density = LocalDensity.current
     val deleteButtonWidth = with(density) { 60.dp.toPx() }
@@ -363,7 +364,7 @@ fun RecordListItem(
                 ) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = stringResource(R.string.delete),
                         tint = Color.Red,
                         modifier = Modifier.size(20.dp)
                     )
@@ -410,7 +411,7 @@ fun RecordListItem(
                         PromptType.CHECKLIST -> {
                             if (record.memo.isNotEmpty()) {
                                 record.memo.joinToString(" • ") { item ->
-                                    val title = item.title[record.locale] ?: "Unknown item"
+                                    val title = item.title[record.locale] ?: unknownItemText
                                     "${if (item.isChecked) "✓" else "○"} $title"
                                 }
                             } else {
@@ -511,7 +512,7 @@ fun BalanceWarningCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = String.format(Locale.US, "Balance: $%.2f", user.dollarBalance),
+                text = stringResource(R.string.balance_amount, user.dollarBalance),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )

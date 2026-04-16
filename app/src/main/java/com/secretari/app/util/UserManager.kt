@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.secretari.app.R
 import com.secretari.app.data.model.User
 import com.secretari.app.data.network.ApiService
 import com.secretari.app.data.network.RegisterRequest
@@ -24,7 +25,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.io.IOException
+import java.net.SocketTimeoutException
 import java.net.URLEncoder
+import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
@@ -194,7 +198,7 @@ class UserManager(private val context: Context) {
                 parseErrorDetail(response)
             }
         } catch (e: Exception) {
-            e.message ?: "Unknown error"
+            parseException(e)
         }
     }
     
@@ -222,12 +226,12 @@ class UserManager(private val context: Context) {
                 parseErrorDetail(response)
             }
         } catch (e: Exception) {
-            e.message ?: "Unknown error"
+            parseException(e)
         }
     }
     
-    suspend fun updateUser(user: User): Boolean {
-        val token = userToken ?: return false
+    suspend fun updateUser(user: User): String? {
+        val token = userToken ?: return context.getString(R.string.invalid_access_token)
         return try {
             val response = apiService.updateUser(
                 token = "Bearer $token",
@@ -242,13 +246,17 @@ class UserManager(private val context: Context) {
             
             if (response.isSuccessful) {
                 persistUser(user)
-                true
+                null
             } else {
-                false
+                parseErrorDetail(response)
             }
         } catch (e: Exception) {
-            false
+            parseException(e)
         }
+    }
+
+    fun logout() {
+        userToken = null
     }
     
     suspend fun deleteAccount(): Boolean {
@@ -362,16 +370,54 @@ class UserManager(private val context: Context) {
     }
 
     private fun <T> parseErrorDetail(response: retrofit2.Response<T>): String {
+        val defaultMessage = context.getString(R.string.request_failed, response.code())
         return try {
             val errorBody = response.errorBody()?.string()
             if (errorBody != null) {
                 val json = JSONObject(errorBody)
-                json.optString("detail", "Request failed (${response.code()})")
+                val detail = json.optString("detail", "")
+                mapServerDetail(detail, response.code(), defaultMessage)
             } else {
-                "Request failed (${response.code()})"
+                defaultMessage
             }
         } catch (e: Exception) {
-            "Request failed (${response.code()})"
+            defaultMessage
+        }
+    }
+
+    private fun mapServerDetail(detail: String, code: Int, fallback: String): String {
+        if (detail.isBlank()) return fallback
+        val normalized = detail.lowercase()
+        return when {
+            normalized.contains("incorrect username or password") ||
+                normalized.contains("invalid credentials") -> {
+                context.getString(R.string.error_invalid_credentials)
+            }
+            normalized.contains("username") && normalized.contains("already") -> {
+                context.getString(R.string.error_username_already_exists)
+            }
+            normalized.contains("email") && normalized.contains("already") -> {
+                context.getString(R.string.error_email_already_exists)
+            }
+            normalized.contains("invalid access token") ||
+                normalized.contains("could not validate credentials") ||
+                normalized.contains("not authenticated") -> {
+                context.getString(R.string.invalid_access_token)
+            }
+            else -> context.getString(R.string.request_failed_with_detail, code, detail)
+        }
+    }
+
+    private fun parseException(exception: Exception): String {
+        return when (exception) {
+            is UnknownHostException -> context.getString(R.string.error_network)
+            is SocketTimeoutException -> context.getString(R.string.error_network_timeout)
+            is IOException -> context.getString(R.string.error_network)
+            else -> context.getString(
+                R.string.request_failed_with_detail,
+                0,
+                exception.message ?: context.getString(R.string.error_unknown)
+            )
         }
     }
 
