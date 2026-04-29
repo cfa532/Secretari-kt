@@ -32,7 +32,7 @@
     <string name="streaming_from_ai">从AI流式传输</string>
     <string name="no_summary">无摘要。尝试重新生成摘要</string>
     <string name="original_transcript">原始转录</string>
-    <string name="recording_failed">录音失败</string>
+    <string name="recording_failed">未检测到语音</string>
     <string name="recognized_text">识别文本:</string>
     <string name="generated_summary">生成的摘要:</string>
     <string name="ai_generating_summary">AI正在生成摘要…</string>
@@ -123,7 +123,7 @@
     <string name="error_failed_to_create_recognition_flow">创建识别流程失败: %s</string>
     <string name="error_flow_collection">流程收集错误: %s</string>
     <string name="error_failed_to_start_recording">开始录音失败: %s</string>
-    <string name="error_no_speech_recognized">录音期间未识别到语音</string>
+    <string name="error_no_speech_recognized">请说话 — 应用将转录您的语音并生成摘要。</string>
     <string name="error_failed_to_authenticate">服务器验证失败</string>
     <string name="error_no_content_to_translate">没有可翻译的内容</string>
     <string name="error_speech_recognition_unavailable">语音识别不可用</string>

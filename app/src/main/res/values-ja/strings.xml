@@ -32,7 +32,7 @@
     <string name="streaming_from_ai">AIからストリーミング中</string>
     <string name="no_summary">要約なし。要約を再生成してください</string>
     <string name="original_transcript">元の転記</string>
-    <string name="recording_failed">録音に失敗しました</string>
+    <string name="recording_failed">音声が検出されませんでした</string>
     <string name="recognized_text">認識テキスト:</string>
     <string name="generated_summary">生成された要約:</string>
     <string name="ai_generating_summary">AIが要約を生成中…</string>
@@ -123,7 +123,7 @@
     <string name="error_failed_to_create_recognition_flow">認識フローの作成に失敗しました: %s</string>
     <string name="error_flow_collection">フロー収集エラー: %s</string>
     <string name="error_failed_to_start_recording">録音の開始に失敗しました: %s</string>
-    <string name="error_no_speech_recognized">録音中に音声が認識されませんでした</string>
+    <string name="error_no_speech_recognized">話してください — アプリが音声を文字起こしして要約を作成します。</string>
     <string name="error_failed_to_authenticate">サーバーへの認証に失敗しました</string>
     <string name="error_no_content_to_translate">翻訳するコンテンツがありません</string>
     <string name="error_speech_recognition_unavailable">音声認識を利用できません</string>

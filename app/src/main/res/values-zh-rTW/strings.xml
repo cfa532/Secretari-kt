@@ -32,7 +32,7 @@
     <string name="streaming_from_ai">從AI串流中</string>
     <string name="no_summary">無摘要。嘗試重新生成摘要</string>
     <string name="original_transcript">原始轉錄</string>
-    <string name="recording_failed">錄音失敗</string>
+    <string name="recording_failed">未偵測到語音</string>
     <string name="recognized_text">識別文字:</string>
     <string name="generated_summary">生成的摘要:</string>
     <string name="ai_generating_summary">AI正在生成摘要…</string>
@@ -123,7 +123,7 @@
     <string name="error_failed_to_create_recognition_flow">建立識別流程失敗: %s</string>
     <string name="error_flow_collection">流程收集錯誤: %s</string>
     <string name="error_failed_to_start_recording">開始錄音失敗: %s</string>
-    <string name="error_no_speech_recognized">錄音期間未識別到語音</string>
+    <string name="error_no_speech_recognized">請說話 — 應用程式將轉錄您的語音並生成摘要。</string>
     <string name="error_failed_to_authenticate">伺服器驗證失敗</string>
     <string name="error_no_content_to_translate">沒有可翻譯的內容</string>
     <string name="error_speech_recognition_unavailable">語音識別無法使用</string>

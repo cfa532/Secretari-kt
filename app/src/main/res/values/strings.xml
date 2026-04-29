@@ -32,7 +32,7 @@
     <string name="streaming_from_ai">Streaming from AI</string>
     <string name="no_summary">No summary. Try to regenerate summary</string>
     <string name="original_transcript">Original Transcript</string>
-    <string name="recording_failed">Recording Failed</string>
+    <string name="recording_failed">No Speech Detected</string>
     <string name="recognized_text">Recognized Text:</string>
     <string name="generated_summary">Generated Summary:</string>
     <string name="ai_generating_summary">AI is generating summary…</string>
@@ -123,7 +123,7 @@
     <string name="error_failed_to_create_recognition_flow">Failed to create recognition flow: %s</string>
     <string name="error_flow_collection">Flow collection error: %s</string>
     <string name="error_failed_to_start_recording">Failed to start recording: %s</string>
-    <string name="error_no_speech_recognized">No speech was recognized during the recording session</string>
+    <string name="error_no_speech_recognized">Speak — the app will transcribe your speech and create a summary.</string>
     <string name="error_failed_to_authenticate">Failed to authenticate with server</string>
     <string name="error_no_content_to_translate">No content to translate</string>
     <string name="error_speech_recognition_unavailable">Speech recognition not available</string>
