@@ -8,6 +8,9 @@
 # Keep Room entities and data models
 -keep class com.secretari.app.data.model.** { *; }
 
+# Keep network data classes to prevent field name obfuscation
+-keep class com.secretari.app.data.network.** { *; }
+
 # Retrofit
 -keep,allowobfuscation,allowshrinking interface retrofit2.Call
 -keep,allowobfuscation,allowshrinking class retrofit2.Response

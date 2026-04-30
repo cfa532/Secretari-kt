@@ -1,5 +1,6 @@
 package com.secretari.app.data.network
 
+import com.google.gson.annotations.SerializedName
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.logging.HttpLoggingInterceptor
@@ -78,85 +79,85 @@ interface ApiService {
 
 // Request/Response models
 data class RegisterRequest(
-    val username: String,
-    val password: String,
-    val family_name: String,
-    val given_name: String,
-    val email: String,
-    val id: String
+    @SerializedName("username") val username: String,
+    @SerializedName("password") val password: String,
+    @SerializedName("family_name") val family_name: String,
+    @SerializedName("given_name") val given_name: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("id") val id: String
 )
 
 data class RegisterResponse(
-    val id: String,
-    val username: String,
-    val family_name: String?,
-    val given_name: String?,
-    val email: String?,
-    val token_count: Long,
-    val dollar_balance: Double,
-    val monthly_usage: Map<String, Double>?
+    @SerializedName("id") val id: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("family_name") val family_name: String?,
+    @SerializedName("given_name") val given_name: String?,
+    @SerializedName("email") val email: String?,
+    @SerializedName("token_count") val token_count: Long,
+    @SerializedName("dollar_balance") val dollar_balance: Double,
+    @SerializedName("monthly_usage") val monthly_usage: Map<String, Double>?
 )
 
 data class UpdateUserRequest(
-    val username: String,
-    val password: String,
-    val email: String,
-    val family_name: String,
-    val given_name: String
+    @SerializedName("username") val username: String,
+    @SerializedName("password") val password: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("family_name") val family_name: String,
+    @SerializedName("given_name") val given_name: String
 )
 
 data class UpdateUserResponse(
-    val email: String,
-    val family_name: String,
-    val given_name: String
+    @SerializedName("email") val email: String,
+    @SerializedName("family_name") val family_name: String,
+    @SerializedName("given_name") val given_name: String
 )
 
 data class DeleteUserResponse(
-    val id: String
+    @SerializedName("id") val id: String
 )
 
 data class TempUserRequest(
-    val username: String,
-    val password: String,
-    val id: String
+    @SerializedName("username") val username: String,
+    @SerializedName("password") val password: String,
+    @SerializedName("id") val id: String
 )
 
 data class TempUserResponse(
-    val token: TokenData,
-    val user: UserData
+    @SerializedName("token") val token: TokenData,
+    @SerializedName("user") val user: UserData
 )
 
 data class TokenData(
-    val access_token: String,
-    val token_type: String
+    @SerializedName("access_token") val access_token: String,
+    @SerializedName("token_type") val token_type: String
 )
 
 data class UserData(
-    val id: String,
-    val username: String,
-    val token_count: Long,
-    val dollar_balance: Double,
-    val monthly_usage: Map<String, Double>?
+    @SerializedName("id") val id: String,
+    @SerializedName("username") val username: String,
+    @SerializedName("token_count") val token_count: Long,
+    @SerializedName("dollar_balance") val dollar_balance: Double,
+    @SerializedName("monthly_usage") val monthly_usage: Map<String, Double>?
 )
 
 data class TokenResponse(
-    val token: TokenData,
-    val user: UserData
+    @SerializedName("token") val token: TokenData,
+    @SerializedName("user") val user: UserData
 )
 
 data class ServerStatusResponse(
-    val server_time: String,
-    val leither_port: Int?,
-    val leither_connected: Boolean,
-    val active_connections: Int,
-    val llm_model: String,
-    val server_maintenance: String,
-    val max_token_limits: Map<String, Int>,
-    val error: String? = null
+    @SerializedName("server_time") val server_time: String,
+    @SerializedName("leither_port") val leither_port: Int?,
+    @SerializedName("leither_connected") val leither_connected: Boolean,
+    @SerializedName("active_connections") val active_connections: Int,
+    @SerializedName("llm_model") val llm_model: String,
+    @SerializedName("server_maintenance") val server_maintenance: String,
+    @SerializedName("max_token_limits") val max_token_limits: Map<String, Int>,
+    @SerializedName("error") val error: String? = null
 )
 
 data class ProductIDsData(
-    val productIDs: Map<String, Double>
+    @SerializedName("productIDs") val productIDs: Map<String, Double>
 )
 
 
