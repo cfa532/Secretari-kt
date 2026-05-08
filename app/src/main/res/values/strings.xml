@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Secretari</string>
+    <string name="app_name">Bounny</string>
 
     <!-- Main Screen -->
     <string name="records">Records</string>

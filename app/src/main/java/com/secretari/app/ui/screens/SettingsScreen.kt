@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.secretari.app.BuildConfig
 import com.secretari.app.R
 import com.secretari.app.data.model.PromptType
 import com.secretari.app.data.model.RecognizerLocale
@@ -200,7 +201,7 @@ fun SettingsScreen(
             }
 
             Text(
-                text = "${stringResource(R.string.version)} 1.0.0",
+                text = "${stringResource(R.string.version)} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
