@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Secretari</string>
+    <string name="app_name">Bounny</string>
     <string name="records">Registros</string>
     <string name="no_records">Sin registros</string>
     <string name="start">Comenzar</string>
